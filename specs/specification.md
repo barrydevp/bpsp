@@ -3,6 +3,7 @@
 ## Structure of an BPSP Frame
 
 ### Overview
+
                                                                                                                           
                                                     BPSP Specification                                                    
                                                                                                                           
@@ -25,7 +26,7 @@
                                             |                             |  |                                            
                                             |                             |  |                                            
                                             |                             |  |                                            
-                                            +-----------------------------+ -+                                             
+                                            +-----------------------------+ -+
 
 ### Data representation
 
@@ -67,7 +68,7 @@ The Data Size is the Variable Byte Integer that represents the size of payload/b
 
 #### Variable Header
 
-The Variable Header is the key-value string that indicate for the extension of the frame, each header key-value pair is represents as `"key""value";("key""value";(...))`.
+The Variable Header is the key-value string that indicate the extension of the frame, each header key-value pair is represents as `"key""value";("key""value";(...))`.
 For example the Authentication Frame contain the variable header for authenticate:
   `"x-usename""admin";"x-password""123456";`
 The `key` should be lowercase string by standard, but no limitation or restriction for the `key` and `value` except that they must be string, for the `;` character we need escape by an backslash `\;`.
