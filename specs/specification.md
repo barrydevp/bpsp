@@ -1,8 +1,8 @@
 # Basic Publish Subscribe Protocol (BPSP)
 
-## Structure of an BPSP Frame
+# Structure of an BPSP Frame
 
-### Overview
+## Overview
 ```
 
                                                                                                                           
@@ -30,21 +30,21 @@
                                             +-----------------------------+ -+
 ```
 
-### Data representation
+## Data representation
 
-#### Bits
+### Bits
 
-#### One Byte Integer
+### One Byte Integer
 
-#### Two Byte Integer
+### Two Byte Integer
 
-#### Variable Byte Integer
+### Variable Byte Integer
 
-#### Character
+### Character
 
-### BSPS Frame Format
+## BSPS Frame Format
 
-#### Fixed Header
+### Fixed Header
 
 Each BSPS Frame contains a Fixed Header as show below:
 ```
@@ -54,30 +54,30 @@ Each BSPS Frame contains a Fixed Header as show below:
                                       4...  |         DATA SIZE           |  |                                            
 ```
 
-##### Variables Size
+#### Variables Size
 
 The Variables size is the Two Byte Integer (Unsigned value) that represents the size in byte of variable header.
 
-##### Opcode
+#### Opcode
 
 The Opcode is the One Byte Integer (Usigned value) that represents the Operation (Command) of the frame.
 
-##### FLAG
+#### FLAG
 
 The Flag is the One Byte Integer with each bits represents the flag for the appropriate Operation.
 
-##### Data Size
+#### Data Size
 
 The Data Size is the Variable Byte Integer that represents the size of payload/body, the number of bytes is not limited for now, but we should use at most 4 bytes to represents data size at maximum 2^28 bytes.
 
-#### Variable Header
+### Variable Header
 
 The Variable Header is the key-value string that indicate the extension of the frame, each header key-value pair is represents as `"key""value";("key""value";(...))`.
 For example the Authentication Frame contain the variable header for authenticate:
   `"x-usename""admin";"x-password""123456";`
 The `key` should be lowercase string by standard, but no limitation or restriction for the `key` and `value` except that they must be string, for the `;` character we need escape by an backslash `\;`.
 
-#### Data
+### Data
 
 The sequence of bytes represent the data of the frame, you can use variable to inform receiver the content-type of the data. eg: "content-type""text"
 
