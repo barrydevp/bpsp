@@ -3,6 +3,7 @@
 ## Structure of an BPSP Frame
 
 ### Overview
+```
 
                                                                                                                           
                                                     BPSP Specification                                                    
@@ -27,7 +28,7 @@
                                             |                             |  |                                            
                                             |                             |  |                                            
                                             +-----------------------------+ -+
-
+```
 
 ### Data representation
 
@@ -46,10 +47,12 @@
 #### Fixed Header
 
 Each BSPS Frame contains a Fixed Header as show below:
+```
 
                                          0  |VARIABLES SIZE|OPCODE | FLAG |  |                                            
                                             ---------------+-------+-------  |  Fixed Header (8 + nbytes(DATA SIZE)) bytes
                                       4...  |         DATA SIZE           |  |                                            
+```
 
 ##### Variables Size
 
