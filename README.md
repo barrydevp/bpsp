@@ -1,4 +1,4 @@
-asic Publish Subscribe Protocol (BPSP)
+Basic Publish Subscribe Protocol (BPSP)
 =================
 
 BPSP is light weight publish subscribe protocol. The project contain the [specification](https://github.com/barrydevp/bpsp/blob/master/specs/specification.md)
