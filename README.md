@@ -12,6 +12,13 @@ and the source code implementation of a client-server for version 1.0.
 
 ## Building from source
 
+## Development
+
+### Coding convention
+
+Exporting something need prefix with file name eg: file `status.c` export function `get_text` => `status__get_text`.
+Unexported something doesn't this prefix.
+
 ## Links
 
 ## Credits
