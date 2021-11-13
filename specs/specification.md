@@ -36,9 +36,15 @@
 
 ### One Byte Integer
 
+`uint8_t`
+
 ### Two Byte Integer
 
+`uint16_t` represent in Big Endian
+
 ### Variable Byte Integer
+
+`uint64_t`
 
 ### Character
 

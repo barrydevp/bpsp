@@ -1,5 +1,5 @@
-#ifndef MEM_H_
-#define MEM_H_
+#ifndef _MEM_H_
+#define _MEM_H_
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -17,4 +17,4 @@ unsigned long mem_max_memory_used(void);
 
 void mem_set_limit(size_t lim);
 
-#endif  // MEM_H_
+#endif  // _MEM_H_

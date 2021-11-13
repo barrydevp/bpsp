@@ -1,5 +1,5 @@
-#ifndef STATUS_H_
-#define STATUS_H_
+#ifndef _STATUS_H_
+#define _STATUS_H_
 
 typedef enum {
   BPSP_CONN_STATUS_DISCONNECTED = 0,  ///< The connection has been disconnected
@@ -162,4 +162,4 @@ static const char* err_text[] = {
 
 const char* status__get_text(status__conn s) { return err_text[(int)s]; }
 
-#endif  // STATUS_H_
+#endif  // _STATUS_H_
