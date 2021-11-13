@@ -4,35 +4,35 @@
 
 ## Overview
 ```
-
-                                                                                                                          
-                                                    BPSP Specification                                                    
-                                                                                                                          
-                                                                                                                          
-                                                0      1      2      3                                                    
-                                            +--------------+-------+------+ -+                                            
-                                         0  |VARIABLES SIZE|OPCODE | FLAG |  |                                            
-                                            ---------------+-------+-------  |  Fixed Header (8 + nbytes(DATA SIZE)) bytes
-                                      4...  |         DATA SIZE           |  |                                            
-                                            -------------------------------  |                                            
-                  4 + nbytes(DATA SIZE)...  |      VARIABLE HEADERS       |  |  Variable Header (OFF * 4 - 8) bytes       
-                                            ------------------------------- -|                                            
-                                            |                             |  |                                            
-                                            |                             |  |                                            
-                                            |                             |  |                                            
-                                            |                             |  |                                            
- 4 + nbytes(DATA SIZE + VARIABLES SIZE)...  |            DATA             |  |  Payload/Body (SIZE - OFF * 4) bytes       
-                                            |                             |  |                                            
-                                            |                             |  |                                            
-                                            |                             |  |                                            
-                                            |                             |  |                                            
-                                            |                             |  |                                            
-                                            +-----------------------------+ -+
+                                        BPSP Specification                                                
+                                                                                                          
+                                                                                                          
+                                    0      1      2      3                                                
+                                +--------------+-------+------+ -+                                        
+                             0  |VARIABLES SIZE|OPCODE | FLAG |  |                                        
+                                ---------------+-------+-------  |  Fixed Header (8) bytes                
+                             4  |         DATA SIZE           |  |                                        
+                                -------------------------------  |                                        
+                          8...  |      VARIABLE HEADERS       |  |  Variable Header (VARIABLES SIZE) bytes
+                                ------------------------------- -|                                        
+                                |                             |  |                                        
+                                |                             |  |                                        
+                                |                             |  |                                        
+                                |                             |  |                                        
+ 8 + nbytes(VARIABLES SIZE)...  |            DATA             |  |  Payload/Body (DATA SIZE) bytes        
+                                |                             |  |                                        
+                                |                             |  |                                        
+                                |                             |  |                                        
+                                |                             |  |                                        
+                                |                             |  |                                        
+                                +-----------------------------+ -+
 ```
 
 ## Data representation
 
 ### Bits
+
+`0` `1`
 
 ### One Byte Integer
 
@@ -42,11 +42,18 @@
 
 `uint16_t` represent in Big Endian
 
+### Four Byte Integer
+
+`uint32_t` represent in Big Endian
+
 ### Variable Byte Integer
+> Deprecated
 
 `uint64_t`
 
 ### Character
+
+`char`
 
 ## BSPS Frame Format
 
@@ -54,10 +61,11 @@
 
 Each BSPS Frame contains a Fixed Header as show below:
 ```
-
-                                         0  |VARIABLES SIZE|OPCODE | FLAG |  |                                            
-                                            ---------------+-------+-------  |  Fixed Header (8 + nbytes(DATA SIZE)) bytes
-                                      4...  |         DATA SIZE           |  |                                            
+                                    0      1      2      3                                                
+                                +--------------+-------+------+ -+                                        
+                             0  |VARIABLES SIZE|OPCODE | FLAG |  |                                        
+                                ---------------+-------+-------  |  Fixed Header (8) bytes                
+                             4  |         DATA SIZE           |  |                                        
 ```
 
 #### Variables Size
@@ -66,7 +74,7 @@ The Variables size is the Two Byte Integer (Unsigned value) that represents the 
 
 #### Opcode
 
-The Opcode is the One Byte Integer (Usigned value) that represents the Operation (Command) of the frame.
+The Opcode is the One Byte Integer (Unsigned value) that represents the Operation (Command) of the frame.
 
 #### FLAG
 
@@ -74,7 +82,7 @@ The Flag is the One Byte Integer with each bits represents the flag for the appr
 
 #### Data Size
 
-The Data Size is the Variable Byte Integer that represents the size of payload/body, the number of bytes is not limited for now, but we should use at most 4 bytes to represents data size at maximum 2^28 bytes.
+The Data Size is the Four Byte Integer (Unsigned value) that represents the size of payload/body, the number of bytes is limited at 2^32 bytes = 4 Gb for now, but we can increase in the future if need.
 
 ### Variable Header
 
@@ -87,5 +95,5 @@ The `key` should be lowercase string by standard, but no limitation or restricti
 
 ### Data
 
-The sequence of bytes represent the data of the frame, you can use variable to inform receiver the content-type of the data. eg: `"content-type""text"`
+The sequence of bytes represent the data of the frame, you can use variable header to inform receiver the content-type of the data. eg: `"content-type""text"`
 

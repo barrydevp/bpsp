@@ -3,10 +3,9 @@
 
 #include "datatype.h"
 
-typedef struct {
+typedef struct bpsp__frame {
     bpsp__byte* payload;
-    /* bpsp__frame* next; */
-    
+    bpsp__frame* next;
 
 } bpsp__frame;
 
