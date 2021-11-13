@@ -12,7 +12,6 @@
     va_end(args);        \
     printf("\n");
 
-
 static inline void print_label(const char* label) {
     char date[20];
     struct timeval tv;
@@ -21,6 +20,16 @@ static inline void print_label(const char* label) {
     gettimeofday(&tv, NULL);
     strftime(date, sizeof(date) / sizeof(*date), "%Y-%m-%dT%H:%M:%S", gmtime(&tv.tv_sec));
     printf("%s.%03ldZ%6s] ", date, tv.tv_usec / 1000, label);
+}
+
+void log__print(const char* label, const char* fmt, ...) {
+    if (label) {
+        print_label(label);
+    } else {
+        print_label("LOG");
+    }
+
+    _VPRINT
 }
 
 void log__debug(const char* fmt, ...) {
