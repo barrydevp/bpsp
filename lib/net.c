@@ -11,26 +11,45 @@
 #include "mem.h"
 #include "status.h"
 
-void connection__free(bpsp__connection* conn) {
-    if (conn) {
-        if (conn->sockfd > 0) {
-            close(conn->sockfd);
-        }
+status__err connection__close(bpsp__connection* conn) {
+    status__err s = BPSP_OK;
 
-        if (conn->addr) {
-            mem__free(conn->addr);
-        }
-
-        if (conn->inbound) {
-            mem__free(conn->inbound);
-        }
-
-        if (conn->outbound) {
-            mem__free(conn->outbound);
-        }
-
-        mem__free(conn);
+    if (!conn) {
+        return s;
     }
+
+    if (conn->sockfd > 0) {
+        log__info("Closing connection %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+        close(conn->sockfd);
+    }
+
+    conn->sockfd = 0;
+    return s;
+}
+
+void connection__free(bpsp__connection* conn) {
+    if (!conn) {
+        return;
+    }
+
+    connection__close(conn);
+
+    if (conn->addr) {
+        mem__free(conn->addr);
+        conn->addr = NULL;
+    }
+
+    if (conn->inbound) {
+        mem__free(conn->inbound);
+        conn->inbound = NULL;
+    }
+
+    if (conn->outbound) {
+        mem__free(conn->outbound);
+        conn->outbound = NULL;
+    }
+
+    mem__free(conn);
 }
 
 bpsp__connection* connection__create(int sockfd, struct sockaddr_in* addr, net__state state, net__type type) {
@@ -152,6 +171,13 @@ bpsp__connection* net__listen(const char* host, uint16_t port) {
         return NULL;
     }
 
+    int option = 1;
+    if (setsockopt(conn->sockfd, SOL_SOCKET, SO_REUSEADDR, (void*)&option, sizeof(option))) {
+        log__error("Cannot set `SO_REUSEADDR`.");
+
+        goto RET_ERROR;
+    }
+
     log__info("Creating broker listen on %s:%d ...\n", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     socklen_t addr_len = sizeof(*(conn->addr));
@@ -218,14 +244,22 @@ RET_ERROR:
     return NULL;
 }
 
-status__err net__free(bpsp__connection* conn) { return net__close(conn); }
+void net__free(bpsp__connection* conn) {
+    if (!conn) {
+        return;
+    }
+
+    connection__free(conn);
+}
 
 status__err net__close(bpsp__connection* conn) {
     status__err s = BPSP_OK;
 
-    assert(conn);
-    log__info("Closing connection %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
-    connection__free(conn);
+    if (!conn) {
+        return s;
+    }
+
+    connection__close(conn);
 
     return s;
 }

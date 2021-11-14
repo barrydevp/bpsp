@@ -2,8 +2,8 @@
 #define _FRAME_H_
 
 #include "datatype.h"
-#include "status.h"
 #include "net.h"
+#include "status.h"
 
 typedef struct {
     char* key;
@@ -30,7 +30,11 @@ typedef struct bpsp__frame {
 } bpsp__frame;
 
 bpsp__frame* frame__alloc();
-bpsp__frame* frame__realloc(bpsp__frame *frame);
-status__err frame__free(bpsp__frame *frame);
+bpsp__frame* frame__init();
+bpsp__frame* frame__realloc(bpsp__frame* frame);
+void frame__free(bpsp__frame* frame);
+status__err frame__build(bpsp__frame* frame);
+status__err frame_empty(bpsp__frame* frame);
+status__err frame_ctr(bpsp__frame* frame);
 
 #endif  // _FRAME_H_

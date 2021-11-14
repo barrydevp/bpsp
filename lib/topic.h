@@ -2,6 +2,7 @@
 #define _TOPIC_H_
 
 #include "client.h"
+#include "pthread.h"
 #include "uthash.h"
 
 #define BPSP_TOK_END_TOPIC "/"
@@ -22,11 +23,11 @@ struct topic__hash_node {
 };
 
 /**
- *  Node topic in Tree 
+ *  Node topic in Tree
  *
  */
 struct topic__node {
-    bpsp__subscriber* subs;     // all subscribers match until end current token
+    bpsp__subscriber* subs;  // all subscribers match until end current token
 
     topic__node* sl_node;  // single-level node
     topic__node* ml_node;  // multi-level node
@@ -34,5 +35,10 @@ struct topic__node {
     /** node hash table **/
     topic__hash_node* nodes;
 };
+
+typedef struct {
+    pthread_mutex_t _mutex;
+    topic__node root;
+} bpsp__topic_tree;
 
 #endif  // _TOPIC_H_

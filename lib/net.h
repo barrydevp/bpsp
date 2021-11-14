@@ -44,7 +44,7 @@ bpsp__connection* net__connect(const char* host, uint16_t port);
 bpsp__connection* net__listen(const char* host, uint16_t port);
 bpsp__connection* net__accept(bpsp__connection* listener);
 bpsp__connection* net__dup(const bpsp__connection* conn);
-status__err net__free(bpsp__connection* conn);
+void net__free(bpsp__connection* conn);
 status__err net__close(bpsp__connection* conn);
 status__err net__read(bpsp__connection* conn, void* buf, size_t count, size_t* n_read, uint8_t block);
 status__err net__write(bpsp__connection* conn, void* buf, size_t count, size_t* n_write, uint8_t block);
