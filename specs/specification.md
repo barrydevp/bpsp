@@ -115,11 +115,11 @@ When subscriber subscribe to a topic, it can subscribe to the exact topic string
 Note that a wildcards can only use to subscribe topic not to publish a message. 
 There are two different kinds of wildcards: ***single-level*** and ***multi-level***
 
-### Single Level: +
+### Single Level: `+`
 
 Single level wildcard replace one topic level. For example: `locationA/+` topic will match `locationA/sensorA`, `locationA/sensorB` published messages but not `locationA/sensorA/uptime`.
 
-### Multi Level: *
+### Multi Level: `*`
 
 Multi level wildcard replace one or more topic level. For example: `locationA/*` topic will match `locationA` ?, `locationA/sensorA`, `locationA/sensorB` and `locationA/sensorA/uptime` published messages. 
 
