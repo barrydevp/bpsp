@@ -102,7 +102,7 @@ The sequence of bytes represent the data of the frame, you can use variable head
 
 ## Format
 
-In BPSP the term topic refers to and string that the broker use to match/filter messsages to appropriate subscriber for each connected client. 
+In BPSP the term `topic` refers to an string that the broker use to match/filter messsages to appropriate subscriber for each connected client. 
 The topic consists of one or more topic levels. 
 Each topic level is seperated by a forward slash `/`. 
 Each topic must contain ***at least one character*** and Topics are case-sensitive. For example `locationA/sensorA` and `LOCATIONa/SENSORa` are two different topics.
