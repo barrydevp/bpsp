@@ -89,14 +89,13 @@ The Data Size is the Four Byte Integer (Unsigned value) that represents the size
 
 The Variable Header is the key-value string that indicate the extension of the frame, each header key-value pair is represents as `"key""value";("key""value";(...))`.
 
-For example the Authentication Frame contain the variable header for authenticate:
-  `"x-usename""admin";"x-password""123456";`
-
 The `key` should be lowercase string by standard, but no limitation or restriction for the `key` and `value` except that they must be string, for the `;` character we need escape by an backslash `\;`.
+
+For example the Authentication Frame contain the variable header for authenticate: `"x-usename""admin";"x-password""123456";`
 
 ### Data
 
-The sequence of bytes represent the data of the frame, you can use variable header to inform receiver the content-type of the data. eg: `"content-type""text"`
+The sequence of bytes represent the data of the frame, you can use variable header to inform receiver the content-type of the data, eg: `"content-type""text"`.
 
 # Topics
 
@@ -113,7 +112,7 @@ Example: `locationA/sensorA`
 
 When subscriber subscribe to a topic, it can subscribe to the exact topic string of a published message or it can use wildcards to subscribe to multiple topic message. 
 Note that a wildcards can only use to subscribe topic not to publish a message. 
-There are two different kinds of wildcards: ***single-level*** and ***multi-level***
+There are two different kinds of wildcards: ***single-level*** and ***multi-level***.
 
 ### Single Level: `+`
 
@@ -135,7 +134,7 @@ List of valid token:
 - `*` multi-level
 - other... 
 
-Each node is one of level in topic, consists one hash table for list next node level, one hash table for list subscribers (note that this hash table contains at least 2 entry, `+` and `*` entry). 
+Each node is one topic level consists one hash table point to next node topic level, one hash table point to list subscribers, single-level `+` node and multi-level `*` node. 
 By structuring into **Tree** and using **Hash Table**, each published message only need to traverse at most total number of level of published topic, so it will be **O(1) constant time** instead of  **O(n)** for traverse all list subscribers. 
 For example, the structure of Node Tree in Pseudocode and how theres topic `locationA/sensorA/*`, `locationA/sensorA/+`, `locationA/sensorA/uptime`, `locationB/sensorB` was fit in this tree. 
 ```c
