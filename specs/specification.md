@@ -117,7 +117,7 @@ There are two different kinds of wildcards: ***single-level*** and ***multi-leve
 
 ### Single Level: `+`
 
-Single level wildcard replace one topic level. For example: `locationA/+` topic will match `locationA/sensorA`, `locationA/sensorB` published messages but not `locationA/sensorA/uptime`.
+Single level wildcard replace one topic level. For example: `locationA/+` topic will match `locationA/sensorA`, `locationA/sensorB` but not `locationA/sensorA/uptime` published messages.
 
 ### Multi Level: `*`
 
@@ -127,7 +127,7 @@ Multi level wildcard replace one or more topic level. For example: `locationA/*`
 
 BPSP Topics is represents as a **Tree** structure, start at root node and following by 0 or more child node. 
 Each topic is split into token by seperated character `/`, number of tokens is the total levels of topic. Eg: `locationA/sensorA/uptime` => `["locationA", "sensorA", "uptime", "/"]` has 4 levels. 
-As you can see all topic will implicitly end with token "/". 
+As you can see all topic will implicitly end with token `/`. 
 
 List of valid token:
 - `/` end of topic
@@ -136,7 +136,7 @@ List of valid token:
 - other... 
 
 Each node is one of level in topic, consists one hash table for list next node level, one hash table for list subscribers (note that this hash table contains at least 2 entry, `+` and `*` entry). 
-By structuring into **Tree** and using **Hash Table**, each published message only need to traverse at most total number of level of published topic, so it will be **O(1)** instead of  **O(n)** for all list subscribers. 
+By structuring into **Tree** and using **Hash Table**, each published message only need to traverse at most total number of level of published topic, so it will be **O(1) constant time** instead of  **O(n)** for traverse all list subscribers. 
 For example, the structure of Node Tree in Pseudocode and how theres topic `locationA/sensorA/*`, `locationA/sensorA/+`, `locationA/sensorA/uptime`, `locationB/sensorB` was fit in this tree. 
 ```c
 /**
