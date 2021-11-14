@@ -10,11 +10,14 @@ void* mem__realloc(void* ptr, size_t size);
 
 void mem__free(void* mem);
 
-char* mem_strdup(const char* s);
+void mem__memmove(void* dst, const void* src, size_t num);
+void mem__memcpy(void* dst, const void* src, size_t num);
 
-unsigned long mem_memory_used(void);
-unsigned long mem_max_memory_used(void);
+char* mem__strdup(const char* s);
 
-void mem_set_limit(size_t lim);
+unsigned long mem__memory_used(void);
+unsigned long mem__max_memory_used(void);
+
+void mem__set_limit(size_t lim);
 
 #endif  // _MEM_H_

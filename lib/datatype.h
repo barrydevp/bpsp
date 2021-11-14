@@ -3,15 +3,14 @@
 
 #include "stdint.h"
 
+/** Primitive **/
 typedef uint8_t bpsp__byte;
 typedef uint8_t bpsp__uint8;
 typedef uint16_t bpsp__uint16;
 typedef uint32_t bpsp__uint32;
 typedef uint64_t bpsp__uintvar;
-typedef struct {
-    char* key;
-    char* value;
-} bpsp__var_header;
+
+/** core **/
 
 static inline int is_bigendian(void);
 

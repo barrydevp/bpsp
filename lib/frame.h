@@ -5,6 +5,11 @@
 #include "status.h"
 #include "net.h"
 
+typedef struct {
+    char* key;
+    char* value;
+} bpsp__var_header;
+
 typedef struct bpsp__frame {
     /** Fixed Header **/
     bpsp__uint16 vars_size;
@@ -20,7 +25,7 @@ typedef struct bpsp__frame {
     bpsp__uint8 payload_length;  // current length
 
     /** Misc **/
-    bpsp__frame* next;
+    struct bpsp__frame* next;
 
 } bpsp__frame;
 
