@@ -36,8 +36,6 @@ typedef struct {
     net__state state;
 
     /** internal **/
-    bpsp__byte* inbound;
-    bpsp__byte* outbound;
 } bpsp__connection;
 
 bpsp__connection* net__connect(const char* host, uint16_t port);
@@ -45,8 +43,9 @@ bpsp__connection* net__listen(const char* host, uint16_t port);
 bpsp__connection* net__accept(bpsp__connection* listener);
 bpsp__connection* net__dup(const bpsp__connection* conn);
 void net__free(bpsp__connection* conn);
+void net__destroy(bpsp__connection* conn);
 status__err net__close(bpsp__connection* conn);
-status__err net__read(bpsp__connection* conn, void* buf, size_t count, size_t* n_read, uint8_t block);
-status__err net__write(bpsp__connection* conn, void* buf, size_t count, size_t* n_write, uint8_t block);
+status__err net__read(bpsp__connection* conn, void* buf, size_t count, ssize_t* n_read, uint8_t block);
+status__err net__write(bpsp__connection* conn, void* buf, size_t count, ssize_t* n_write, uint8_t block);
 
 #endif  // _NET_H_

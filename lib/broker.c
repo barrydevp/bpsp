@@ -1,5 +1,7 @@
 #include "broker.h"
 
+#include <assert.h>
+
 #include "client.h"
 #include "log.h"
 #include "mem.h"
@@ -14,13 +16,13 @@ bpsp__broker* broker__new(const char* host, uint16_t port) {
         return NULL;
     }
 
-    if (!pthread_mutex_init(&broker->clients_mutex, NULL)) {
-        log__error("Broker cannot init `clients_mutext`");
+    if (pthread_mutex_init(&broker->clients_mutex, NULL)) {
+        log__error("Broker cannot init `clients_mutex`");
 
         goto RET_ERROR;
     }
 
-    if (!pthread_mutex_init(&((broker->topic_tree)._mutex), NULL)) {
+    if (pthread_mutex_init(&((broker->topic_tree)._mutex), NULL)) {
         log__error("Broker cannot init `topic_tree._mutext`");
 
         goto RET_ERROR;
@@ -61,20 +63,14 @@ status__err broker__close(bpsp__broker* broker) {
     return s;
 }
 
-status__err broker__free(bpsp__broker* broker) {
-    status__err s = BPSP_OK;
-
-    if(!broker) {
-        return s;
+void broker__free(bpsp__broker* broker) {
+    if (!broker) {
+        return;
     }
 
-    s = broker__close(broker);
+    broker__close(broker);
 
     pthread_mutex_destroy(&broker->clients_mutex);
-
-    if (s != BPSP_OK) {
-        return s;
-    }
 
     // is it necessary to holding lock?
     pthread_mutex_lock(&broker->clients_mutex);
@@ -84,6 +80,36 @@ status__err broker__free(bpsp__broker* broker) {
     pthread_mutex_unlock(&broker->clients_mutex);
 
     mem__free(broker);
+}
 
-    return s;
+void broker__destroy(bpsp__broker* broker) {
+    if (!broker) {
+        return;
+    }
+
+    broker__free(broker);
+}
+
+bpsp__client* broker__accept(bpsp__broker* broker) {
+    assert(broker);
+
+    bpsp__connection* c_conn = net__accept(broker->listener);
+
+    if (!c_conn) {
+        log__error("NULL client__accept()");
+        return NULL;
+    }
+
+    bpsp__client* client = client__new(c_conn);
+
+    if (!client) {
+        log__error("NULL client__new()");
+        goto RET_ERROR;
+    }
+
+    return client;
+RET_ERROR:
+    net__free(c_conn);
+
+    return NULL;
 }

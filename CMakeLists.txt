@@ -1,19 +1,29 @@
+# PROJECT INFO
 cmake_minimum_required(VERSION 3.0.0)
 project(bpsp VERSION 1.0.0)
 
-find_package(Curses REQUIRED)
-include_directories(${CURSES_INCLUDE_DIR})
-
+# COMPILER
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pthread")
 
 include(CTest)
 enable_testing()
 
-include_directories(test)
-link_directories(lib)
-
-file(GLOB SOURCES src/*.c)
-
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
+# ANOTHER CMAKE
+add_subdirectory(lib)
+
+# SOURCE
+file(GLOB SRCS ${PROJECT_SOURCE_DIR}/server/*.c)
+
+# LINK
+# link_directories(lib)
+
+# BUILD LIB
+# add_library(bpsp STATIC ${LIBS})
+
+# BUILD BIN
+add_executable(server ${SRCS})
+target_link_libraries(server bpsp)

@@ -39,16 +39,6 @@ void connection__free(bpsp__connection* conn) {
         conn->addr = NULL;
     }
 
-    if (conn->inbound) {
-        mem__free(conn->inbound);
-        conn->inbound = NULL;
-    }
-
-    if (conn->outbound) {
-        mem__free(conn->outbound);
-        conn->outbound = NULL;
-    }
-
     mem__free(conn);
 }
 
@@ -57,25 +47,9 @@ bpsp__connection* connection__create(int sockfd, struct sockaddr_in* addr, net__
     if (!conn) {
         return NULL;
     }
-    bpsp__byte* inbound = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * BPSP_NET_BUFFER_SIZE);
-    if (!inbound) {
-        mem__free(conn);
-        return NULL;
-    }
-
-    bpsp__byte* outbound = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * BPSP_NET_BUFFER_SIZE);
-    if (!outbound) {
-        mem__free(inbound);
-        mem__free(conn);
-        return NULL;
-    }
-    memset(inbound, 0, sizeof(bpsp__byte) * BPSP_NET_BUFFER_SIZE);
-    memset(outbound, 0, sizeof(bpsp__byte) * BPSP_NET_BUFFER_SIZE);
     /* memset(conn, 0, sizeof(conn)); */
 
     conn->sockfd = sockfd;
-    conn->inbound = inbound;
-    conn->outbound = outbound;
 
     conn->addr = addr;
     conn->state = state;
@@ -100,6 +74,7 @@ bpsp__connection* connection__init(const char* host, uint16_t port, net__state s
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0) {
+        perror("socket()");
         mem__free(addr);
 
         return NULL;
@@ -122,11 +97,13 @@ bpsp__connection* net__dup(const bpsp__connection* conn) {
     }
 
     struct sockaddr_in* addr = (struct sockaddr_in*)mem__malloc(sizeof(struct sockaddr_in));
-    mem__memmove(addr, conn->addr, sizeof(*addr));
 
     if (!addr) {
+        log__error("Cannot malloc() addr.");
         return NULL;
     }
+
+    mem__memmove(addr, conn->addr, sizeof(*addr));
 
     bpsp__connection* _conn = connection__create(conn->sockfd, addr, conn->state, conn->type);
 
@@ -150,6 +127,8 @@ bpsp__connection* net__connect(const char* host, uint16_t port) {
 
     if (connect(conn->sockfd, (struct sockaddr*)conn->addr, sizeof(*(conn->addr))) < 0) {
         log__error("Cannot connect socket.");
+        perror("connect()");
+
         goto RET_ERROR;
     }
 
@@ -174,6 +153,7 @@ bpsp__connection* net__listen(const char* host, uint16_t port) {
     int option = 1;
     if (setsockopt(conn->sockfd, SOL_SOCKET, SO_REUSEADDR, (void*)&option, sizeof(option))) {
         log__error("Cannot set `SO_REUSEADDR`.");
+        perror("setsockopt()");
 
         goto RET_ERROR;
     }
@@ -185,12 +165,16 @@ bpsp__connection* net__listen(const char* host, uint16_t port) {
     log__info("Binding...");
     if (bind(conn->sockfd, (struct sockaddr*)conn->addr, addr_len) < 0) {
         log__error("Cannot bind socket.");
+        perror("bind()");
+
         goto RET_ERROR;
     }
 
     log__info("Listen...");
     if (listen(conn->sockfd, BPSP_NET_BACKLOG) < 0) {
         log__error("Cannot listen socket.");
+        perror("listen()");
+
         goto RET_ERROR;
     }
 
@@ -214,9 +198,10 @@ bpsp__connection* net__accept(bpsp__connection* listener) {
     memset(addr, 0, sizeof(*addr));
     socklen_t addr_len = sizeof(*addr);
 
-    int sockfd = 0;
+    int sockfd = -1;
     // accept new connection, return new socketfd
     while (sockfd < 0) {
+        addr_len = sizeof(*addr);
         sockfd = accept(listener->sockfd, (struct sockaddr*)addr, &addr_len);
         if (sockfd < 0) {
             if (errno == EINTR) {
@@ -224,9 +209,13 @@ bpsp__connection* net__accept(bpsp__connection* listener) {
             }
 
             log__error("Cannot accept socket.");
+            perror("accpet()");
+
             goto RET_ERROR;
         }
     }
+
+    log__info("Broker accept connection from %s:%d", inet_ntoa(addr->sin_addr), ntohs(addr->sin_port));
 
     bpsp__connection* conn = connection__create(sockfd, addr, NET_S_CONNECTED, NET_T_ACTIVE);
 
@@ -252,6 +241,14 @@ void net__free(bpsp__connection* conn) {
     connection__free(conn);
 }
 
+void net__destroy(bpsp__connection* conn) {
+    if (!conn) {
+        return;
+    }
+
+    net__free(conn);
+}
+
 status__err net__close(bpsp__connection* conn) {
     status__err s = BPSP_OK;
 
@@ -264,7 +261,7 @@ status__err net__close(bpsp__connection* conn) {
     return s;
 }
 
-status__err net__read(bpsp__connection* conn, void* buf, size_t size, size_t* n_read, uint8_t block) {
+status__err net__read(bpsp__connection* conn, void* buf, size_t size, ssize_t* n_read, uint8_t block) {
     status__err s = BPSP_OK;
     *n_read = 0;
 
@@ -273,7 +270,7 @@ status__err net__read(bpsp__connection* conn, void* buf, size_t size, size_t* n_
     }
 
     assert(buf);
-    size_t n = 0;
+    ssize_t n = 0;
 
     while (*n_read < size) {
         n = recv(conn->sockfd, buf + *n_read, size - *n_read, 0);
@@ -300,7 +297,7 @@ status__err net__read(bpsp__connection* conn, void* buf, size_t size, size_t* n_
     return s;
 }
 
-status__err net__write(bpsp__connection* conn, void* buf, size_t size, size_t* n_write, uint8_t block) {
+status__err net__write(bpsp__connection* conn, void* buf, size_t size, ssize_t* n_write, uint8_t block) {
     status__err s = BPSP_OK;
     *n_write = 0;
 
@@ -309,7 +306,7 @@ status__err net__write(bpsp__connection* conn, void* buf, size_t size, size_t* n
     }
 
     assert(buf);
-    size_t n = 0;
+    ssize_t n = 0;
 
     while (*n_write < size) {
         n = send(conn->sockfd, buf + *n_write, size - *n_write, MSG_NOSIGNAL);

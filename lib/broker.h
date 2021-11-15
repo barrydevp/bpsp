@@ -21,7 +21,9 @@ struct bpsp__broker {
 };
 
 bpsp__broker* broker__new(const char* host, uint16_t port);
-status__err broker__free(bpsp__broker* broker);
+void broker__free(bpsp__broker* broker);
+void broker__destroy(bpsp__broker* broker);
 status__err broker__close(bpsp__broker* broker);
+bpsp__client* broker__accept(bpsp__broker* broker);
 
 #endif  // _BROKER_H_
