@@ -80,6 +80,7 @@ bpsp__client* client__new(bpsp__connection* conn) {
     return c;
 
 RET_ERROR:
+    utarray_free(c->subs);
     mem__free(c);
     return NULL;
 }
@@ -124,6 +125,10 @@ void client__dtor(void* _elt) {
 
     // TODO: remove sub from topic_tree(prune if need), and free subs array
     net__free(elt->conn);
+
+    if (elt->subs) {
+        utarray_free(elt->subs);
+    }
 
     if (elt->inbound) {
         mem__free(elt->inbound);

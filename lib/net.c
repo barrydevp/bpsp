@@ -204,9 +204,9 @@ bpsp__connection* net__accept(bpsp__connection* listener) {
         addr_len = sizeof(*addr);
         sockfd = accept(listener->sockfd, (struct sockaddr*)addr, &addr_len);
         if (sockfd < 0) {
-            if (errno == EINTR) {
-                continue;
-            }
+            /* if (errno == EINTR) { */
+            /*     continue; */
+            /* } */
 
             log__error("Cannot accept socket.");
             perror("accpet()");
@@ -261,7 +261,7 @@ status__err net__close(bpsp__connection* conn) {
     return s;
 }
 
-status__err net__read(bpsp__connection* conn, void* buf, size_t size, ssize_t* n_read, uint8_t block) {
+status__err net__read(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_read, uint8_t block) {
     status__err s = BPSP_OK;
     *n_read = 0;
 
@@ -297,7 +297,7 @@ status__err net__read(bpsp__connection* conn, void* buf, size_t size, ssize_t* n
     return s;
 }
 
-status__err net__write(bpsp__connection* conn, void* buf, size_t size, ssize_t* n_write, uint8_t block) {
+status__err net__write(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_write, uint8_t block) {
     status__err s = BPSP_OK;
     *n_write = 0;
 

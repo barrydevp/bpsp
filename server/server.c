@@ -42,6 +42,7 @@ void* server__handle_client(void* arg) {
 
         if (s != BPSP_OK) {
             perror("net_read()");
+            log__error("Fine");
             break;
         }
         s = net__write(client->conn, "test", 4, &n_write, 1);
@@ -89,6 +90,7 @@ int main(int argc, char* argv[]) {
 
     // Signals
     signal(SIGPIPE, SIG_IGN);
+    /* signal(SIGINT, SIG_IGN); */
 
     // create
     broker = broker__new(listen_addr, (uint16_t)listen_port);

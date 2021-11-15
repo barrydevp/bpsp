@@ -22,7 +22,7 @@ static inline void print_label(const char* label) {
     printf("%s.%03ldZ%6s] ", date, tv.tv_usec / 1000, label);
 }
 
-void log__print(const char* label, const char* fmt, ...) {
+void _log__print(const char* label, const char* fmt, ...) {
     if (label) {
         print_label(label);
     } else {
@@ -32,25 +32,25 @@ void log__print(const char* label, const char* fmt, ...) {
     _VPRINT
 }
 
-void log__debug(const char* fmt, ...) {
+void _log__debug(const char* fmt, ...) {
     print_label("DEBUG");
 
     _VPRINT
 }
 
-void log__info(const char* fmt, ...) {
+void _log__info(const char* fmt, ...) {
     print_label("INFO");
 
     _VPRINT
 }
 
-void log__warn(const char* fmt, ...) {
+void _log__warn(const char* fmt, ...) {
     print_label("WARN");
 
     _VPRINT
 }
 
-void log__error(const char* fmt, ...) {
+void _log__error(const char* fmt, ...) {
     print_label("ERROR");
 
     _VPRINT

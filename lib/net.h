@@ -45,7 +45,7 @@ bpsp__connection* net__dup(const bpsp__connection* conn);
 void net__free(bpsp__connection* conn);
 void net__destroy(bpsp__connection* conn);
 status__err net__close(bpsp__connection* conn);
-status__err net__read(bpsp__connection* conn, void* buf, size_t count, ssize_t* n_read, uint8_t block);
-status__err net__write(bpsp__connection* conn, void* buf, size_t count, ssize_t* n_write, uint8_t block);
+status__err net__read(bpsp__connection* conn, void* buf, ssize_t count, ssize_t* n_read, uint8_t block);
+status__err net__write(bpsp__connection* conn, void* buf, ssize_t count, ssize_t* n_write, uint8_t block);
 
 #endif  // _NET_H_
