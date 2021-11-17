@@ -14,6 +14,20 @@
 #define OFFSET_DATA_SIZE 4
 #define OFFSET_VAR_HEADERS 8
 
+typedef enum {
+    OP_NOOP = 0,
+    OP_INFO,
+    OP_CONNECT,
+    OP_PUB,
+    OP_SUB,
+    OP_UNSUB,
+    OP_MSG,
+    OP_OK,
+    OP_ERR,
+} bpsp__opcode;
+
+typedef char** bpsp__var_header_pair;  // must be char[2]
+
 typedef struct {
     char* key;
     bpsp__uint16 n_key;
@@ -38,7 +52,8 @@ typedef struct bpsp__frame {
 
     /** Frame body **/
     bpsp__byte* payload;  //
-    bpsp__uint32 pos;     // current processsed position of frame
+    bpsp__uint32 payload_size;
+    bpsp__uint32 pos;  // current processsed position of frame
 
     /** Misc **/
     /* struct bpsp__frame* next; */
@@ -54,11 +69,15 @@ bpsp__frame* frame__realloc(bpsp__frame* frame);
 void frame__free(bpsp__frame* frame);
 bpsp__frame* frame__new();
 status__err frame__empty(bpsp__frame* frame);
-status__err frame__set_var_header(bpsp__frame* frame, const char* key, const char* value);
+status__err frame__set_var_header(bpsp__frame* frame, char* key, char* value);
+status__err frame__set_var_header2(bpsp__frame* frame, bpsp__var_header_pair pair);
+status__err frame__set_var_headers(bpsp__frame* frame, bpsp__var_header_pair* headers, uint16_t n_headers);
 status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size);
 status__err frame__set_opcode(bpsp__frame* frame, bpsp__uint8 opcode);
 status__err frame__set_flag(bpsp__frame* frame, bpsp__uint8 flag);
+status__err frame__set_frame_control(bpsp__frame* frame, bpsp__uint8 opcode, uint8_t flag);
 status__err frame__malloc_payload(bpsp__frame* frame, bpsp__uint32 data_size);
+status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size, bpsp__uint8 append);
 status__err frame__is_completed(bpsp__frame* frame);
 status__err frame__build(bpsp__frame* frame);
 void frame__print(bpsp__frame* frame);
@@ -70,7 +89,17 @@ status__err frame__read(bpsp__connection* conn, bpsp__frame* frame);
 status__err frame__write(bpsp__connection* conn, bpsp__frame* frame);
 
 /** frame op **/
-
+status__err frame__INFO(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
+status__err frame__CONNECT(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
+status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
+                       uint16_t n_headers, bpsp__byte* msg, uint32_t size);
+status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers_rule,
+                       uint16_t n_headers);
+status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag);
+status__err frame__MSG(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
+                       uint16_t n_headers, bpsp__byte* msg, uint32_t size);
+status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, bpsp__byte* msg, uint32_t size);
+status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, bpsp__byte* err, uint32_t size);
 
 /** test **/
 status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size);

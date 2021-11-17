@@ -43,7 +43,7 @@ void client__init(void* _elt) { bpsp__client* c = (bpsp__client*)_elt; }
 bpsp__client* client__new(bpsp__connection* conn) {
     assert(conn);
 
-    bpsp__client* c = mem__malloc(sizeof(bpsp__client));
+    bpsp__client* c = (bpsp__client*)mem__malloc(sizeof(bpsp__client));
 
     if (!c) {
         log__error("Cannot malloc() client");
@@ -160,9 +160,7 @@ status__err client__close(bpsp__client* client) {
 
     s = net__close(client->conn);
 
-    IFN_OK(s) {
-        return s;
-    }
+    IFN_OK(s) { return s; }
 
     return s;
 }

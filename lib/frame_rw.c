@@ -25,11 +25,8 @@ status__err frame__read(bpsp__connection* conn, bpsp__frame* frame) {
     bpsp__uint16 vars_size = datatype__d16(fixed_header);
 
     bpsp__uint8 opcode = datatype__d8(fixed_header + OFFSET_OPCODE);
-    s = frame__set_opcode(frame, opcode);
-    ASSERT_BPSP_OK(s);
-
     bpsp__uint8 flag = datatype__d8(fixed_header + OFFSET_FLAG);
-    s = frame__set_flag(frame, flag);
+    s = frame__set_frame_control(frame, opcode, flag);
     ASSERT_BPSP_OK(s);
 
     bpsp__uint32 data_size = datatype__d32(fixed_header + OFFSET_DATA_SIZE);
@@ -68,6 +65,7 @@ status__err frame__read(bpsp__connection* conn, bpsp__frame* frame) {
 
     if (data_size > 0) {
         s = net__read(conn, frame->payload, data_size, &n_read, 1);
+        frame->pos = (bpsp__uint32)n_read;
         n_read = 0;
         IFN_OK(s) {
             //

@@ -9,6 +9,10 @@ build:
 	@mkdir -p $(BUILD_DIR)
 	@cd $(BUILD_DIR) && cmake .. && cmake --build .
 
+debug:
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug .. && cmake --build .
+
 clean:
 	@rm -rf $(BUILD_DIR)
 

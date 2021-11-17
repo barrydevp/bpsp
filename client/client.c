@@ -74,6 +74,28 @@ void* server__handle_client(void* arg) {
     return NULL;
 }
 
+status__err echo(bpsp__connection* conn, bpsp__frame* frame) {
+    status__err s = frame__write(conn, frame);
+
+    IFN_OK(s) {
+        log__error("frame__write() %s", ERR_TEXT(s));
+
+        return s;
+    }
+
+    s = frame__read(conn, frame);
+
+    IFN_OK(s) {
+        log__error("frame__read() %s", ERR_TEXT(s));
+
+        return s;
+    }
+
+    frame__print(frame);
+
+    return s;
+}
+
 void __loop(bpsp__connection* conn) {
     if (!conn) {
         errno = EINVAL;
@@ -87,46 +109,50 @@ void __loop(bpsp__connection* conn) {
 
     frame__empty(out);
 
-    frame__set_opcode(out, 1);
-    frame__set_flag(out, 0);
-    frame__set_var_header(out, "x-version", "1.0.0");
-    frame__set_var_header(out, "x-username", "haidao");
-    frame__set_var_header(out, "x-password", "1234");
-    frame__set_var_header(out, "x-password", "123456");
-    const char* message = "xin chao the gioi!";
-    frame__malloc_payload(out, strlen(message));
-    mem__memcpy(out->payload, message, out->data_size);
-    frame__build(out);
+    const char* msg = "hello from server";
+    const char* topic = "locationA/sensorA";
+    frame__INFO(out, (bpsp__byte*)msg, strlen(msg));
+    s = echo(conn, out);
+    frame__CONNECT(out, (bpsp__byte*)msg, strlen(msg));
+    s = echo(conn, out);
+    frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
+    s = echo(conn, out);
+    frame__SUB(out, (char*)topic, 0, NULL, 0);
+    s = echo(conn, out);
+    frame__UNSUB(out, (char*)topic, 0);
+    s = echo(conn, out);
+    frame__OK(out, 0, (bpsp__byte*)msg, strlen(msg));
+    s = echo(conn, out);
+    frame__ERR(out, 0, (bpsp__byte*)msg, strlen(msg));
+    s = echo(conn, out);
 
-    frame__print(out);
+    /* int count = 0; */
 
-    int count = 0;
-
-    while (s == BPSP_OK && count < 100) {
-        s = frame__write(conn, out);
-
-        IFN_OK(s) {
-            log__error("frame__write() %s", ERR_TEXT(s));
-
-            break;
-        }
-
-        s = frame__read(conn, out);
-
-        frame__set_opcode(out, count + 1);
-
-        IFN_OK(s) {
-            log__error("frame__read() %s", ERR_TEXT(s));
-
-            break;
-        }
-
-        frame__print(out);
-
-        count++;
-
-        /* pthread_create(&tid, NULL, &server__handle_client, (void*)client); */
-    }
+    /*     while (s == BPSP_OK && count < 100) { */
+    /*         s = frame__write(conn, out); */
+    /*  */
+    /*         IFN_OK(s) { */
+    /*             log__error("frame__write() %s", ERR_TEXT(s)); */
+    /*  */
+    /*             break; */
+    /*         } */
+    /*  */
+    /*         s = frame__read(conn, out); */
+    /*  */
+    /*         frame__set_opcode(out, count + 1); */
+    /*  */
+    /*         IFN_OK(s) { */
+    /*             log__error("frame__read() %s", ERR_TEXT(s)); */
+    /*  */
+    /*             break; */
+    /*         } */
+    /*  */
+    /*         frame__print(out); */
+    /*  */
+    /*         count++; */
+    /*  */
+    /* pthread_create(&tid, NULL, &server__handle_client, (void*)client); */
+    /*     } */
 
     frame__free(out);
 }

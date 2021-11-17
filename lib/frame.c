@@ -6,9 +6,9 @@
 #include "mem.h"
 #include "status.h"
 
-bpsp__var_header* var_header__new(const char* key, const char* value) {
-    ASSERT_ARG(key, NULL);
-    ASSERT_ARG(strlen(key), NULL);
+bpsp__var_header* var_header__new(char* key, char* value) {
+    /* ASSERT_ARG(key, NULL); */
+    /* ASSERT_ARG(strlen(key), NULL); */
     /* ASSERT_ARG(value, NULL); */
 
     bpsp__var_header* var_header = (bpsp__var_header*)mem__malloc(sizeof(bpsp__var_header));
@@ -24,7 +24,7 @@ bpsp__var_header* var_header__new(const char* key, const char* value) {
     return var_header;
 }
 
-status__err var_header__set(bpsp__var_header* var_header, const char* value) {
+status__err var_header__set(bpsp__var_header* var_header, char* value) {
     ASSERT_ARG(var_header, BPSP_INVALID_ARG);
     ASSERT_ARG(var_header->key, BPSP_INVALID_ARG);
 
@@ -119,8 +119,10 @@ void frame__free_payload(bpsp__frame* frame) {
         mem__free(frame->payload);
     }
 
+    frame->payload_size = 0;
     frame->data_size = 0;
     frame->pos = 0;
+    frame->payload = NULL;
 }
 
 void frame__free_var_headers(bpsp__frame* frame) {
@@ -142,7 +144,6 @@ void frame__free(bpsp__frame* frame) {
 
     /* if(frame->next) */
     frame__free_payload(frame);
-    frame->payload = NULL;
 
     frame__free_var_headers(frame);
 
@@ -171,7 +172,11 @@ status__err frame__empty(bpsp__frame* frame) {
     return s;
 }
 
-status__err frame__set_var_header(bpsp__frame* frame, const char* key, const char* value) {
+status__err frame__set_var_header(bpsp__frame* frame, char* key, char* value) {
+    ASSERT_ARG(key, BPSP_INVALID_ARG);
+    ASSERT_ARG(strlen(key), BPSP_INVALID_ARG);
+    /* ASSERT_ARG(value, NULL); */
+
     status__err s = BPSP_OK;
 
     ASSERT_ARG(frame, BPSP_INVALID_ARG);
@@ -206,6 +211,30 @@ status__err frame__set_var_header(bpsp__frame* frame, const char* key, const cha
         frame->vars_size += key_len + value_len + 5;
 
         HASH_ADD_STR(frame->var_headers, key, var_header);
+    }
+
+    return s;
+}
+
+status__err frame__set_var_header2(bpsp__frame* frame, bpsp__var_header_pair pair) {
+    ASSERT_ARG(pair, BPSP_INVALID_ARG);
+
+    return frame__set_var_header(frame, pair[0], pair[1]);
+}
+
+status__err frame__set_var_headers(bpsp__frame* frame, bpsp__var_header_pair* headers, uint16_t n_headers) {
+    if (n_headers == 0) {
+        return BPSP_OK;
+    }
+
+    ASSERT_ARG(n_headers > 0 && headers, BPSP_INVALID_ARG);
+
+    status__err s = BPSP_OK;
+
+    for (uint16_t i = 0; i < n_headers; i++) {
+        s = frame__set_var_header2(frame, headers[i]);
+
+        ASSERT_BPSP_OK(s);
     }
 
     return s;
@@ -294,22 +323,72 @@ status__err frame__set_flag(bpsp__frame* frame, bpsp__uint8 flag) {
     return s;
 }
 
+status__err frame__set_frame_control(bpsp__frame* frame, bpsp__uint8 opcode, bpsp__uint8 flag) {
+    status__err s = frame__set_opcode(frame, opcode);
+
+    ASSERT_BPSP_OK(s);
+
+    s = frame__set_flag(frame, flag);
+
+    return s;
+}
+
 status__err frame__malloc_payload(bpsp__frame* frame, bpsp__uint32 data_size) {
     ASSERT_ARG(frame, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
 
-    frame__free_payload(frame);
+    // TODO: Use reallocate instead of free and malloc?
 
     if (data_size == 0) {
+        frame__free_payload(frame);
+
         return s;
     }
 
-    frame->payload = mem__malloc(data_size);
+    if (frame->payload_size) {
+        bpsp__byte* old_payload = frame->payload;
+        frame->payload = (bpsp__byte*)mem__realloc(frame->payload, sizeof(bpsp__byte) * data_size);
 
-    ASSERT_ARG(frame->payload, BPSP_NO_MEMORY);
+        if (!frame->payload) {
+            mem__free(old_payload);
+        }
+    } else {
+        frame->payload = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * data_size);
+    }
 
+    frame->pos = 0;
+
+    if (!frame->payload) {
+        frame->payload_size = 0;
+        frame->data_size = 0;
+        return BPSP_NO_MEMORY;
+    }
+
+    frame->payload_size = data_size;
     frame->data_size = data_size;
+
+    return s;
+}
+
+status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size, bpsp__uint8 append) {
+    status__err s = BPSP_OK;
+
+    // save old_pos because frame__malloc_payload will reset pos
+    bpsp__uint32 pos = frame->pos;
+    bpsp__uint32 allocate_size = frame->payload_size + data_size;
+
+    if (!append) {
+        // if not append, we will reset pos
+        pos = 0;
+        allocate_size = data_size;
+    }
+    s = frame__malloc_payload(frame, allocate_size);
+
+    ASSERT_BPSP_OK(s);
+    mem__memcpy(frame->payload + pos, payload, data_size);
+
+    frame->pos = data_size + pos;
 
     return s;
 }
@@ -378,7 +457,7 @@ void frame__print(bpsp__frame* frame) {
 
         printf("--Data Payload--\n");
         if (frame->data_size > 0) {
-            char* payload = mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
+            char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
             mem__memcpy(payload, frame->payload, frame->data_size);
             printf("%s\n", payload);
             mem__free(payload);
