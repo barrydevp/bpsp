@@ -211,6 +211,59 @@ status__err frame__set_var_header(bpsp__frame* frame, const char* key, const cha
     return s;
 }
 
+status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size) {
+    status__err s = BPSP_OK;
+
+    log__debug("size: %u - buf: %s", size, buf);
+
+    if (size == 0) {
+        return s;
+    }
+
+    bpsp__uint16 n = 0;
+    bpsp__uint16 start_key = 0;
+    bpsp__uint16 end_key = 0;
+    bpsp__uint16 start_value = 0;
+
+    for (; n < size; n++) {
+        if (n != 0 && ((char)*(buf + n) != '"' || (char)*(buf + n - 1) == '\\')) {
+            continue;
+        }
+        // if start of key is not set, so this open double quote is the start of key
+        if (!start_key) {
+            start_key = n + 1;
+        } else if (!end_key) {
+            end_key = n;
+        } else if (!start_value) {
+            start_value = n + 1;
+        } else {
+            // we reach close double quote of end of value
+
+            // set NULL char for end of key
+            *(buf + end_key) = (uint8_t)'\0';
+            // set NULL char for end of value
+            *(buf + n) = (uint8_t)'\0';
+
+            frame__set_var_header(frame, (char*)buf + start_key, (char*)buf + start_value);
+
+            // skip ';', should we remove ';' in spec?
+            n += 1;
+
+            // reset
+            start_key = 0;
+            end_key = 0;
+            start_value = 0;
+        }
+    }
+
+    // partial parsed (not completed parse header)
+    if (start_key) {
+        return BPSP_INVALID_VAR_HEADERS;
+    }
+
+    return s;
+}
+
 status__err frame__validate_opcode(bpsp__uint8 opcode) {
     ASSERT_ARG(opcode > 0, BPSP_INVALID_OPCODE);
 

@@ -55,6 +55,7 @@ void frame__free(bpsp__frame* frame);
 bpsp__frame* frame__new();
 status__err frame__empty(bpsp__frame* frame);
 status__err frame__set_var_header(bpsp__frame* frame, const char* key, const char* value);
+status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size);
 status__err frame__set_opcode(bpsp__frame* frame, bpsp__uint8 opcode);
 status__err frame__set_flag(bpsp__frame* frame, bpsp__uint8 flag);
 status__err frame__malloc_payload(bpsp__frame* frame, bpsp__uint32 data_size);

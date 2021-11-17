@@ -5,59 +5,6 @@
 #include "net.h"
 #include "status.h"
 
-status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size) {
-    status__err s = BPSP_OK;
-
-    log__debug("size: %u - buf: %s", size, buf);
-
-    if (size == 0) {
-        return s;
-    }
-
-    bpsp__uint16 n = 0;
-    bpsp__uint16 start_key = 0;
-    bpsp__uint16 end_key = 0;
-    bpsp__uint16 start_value = 0;
-
-    for (; n < size; n++) {
-        if (n != 0 && ((char)*(buf + n) != '"' || (char)*(buf + n - 1) == '\\')) {
-            continue;
-        }
-        // if start of key is not set, so this open double quote is the start of key
-        if (!start_key) {
-            start_key = n + 1;
-        } else if (!end_key) {
-            end_key = n;
-        } else if (!start_value) {
-            start_value = n + 1;
-        } else {
-            // we reach close double quote of end of value
-
-            // set NULL char for end of key
-            *(buf + end_key) = (uint8_t)'\0';
-            // set NULL char for end of value
-            *(buf + n) = (uint8_t)'\0';
-
-            frame__set_var_header(frame, (char*)buf + start_key, (char*)buf + start_value);
-
-            // skip ';', should we remove ';' in spec?
-            n += 1;
-
-            // reset
-            start_key = 0;
-            end_key = 0;
-            start_value = 0;
-        }
-    }
-
-    // partial parsed (not completed parse header)
-    if (start_key) {
-        return BPSP_INVALID_VAR_HEADERS;
-    }
-
-    return s;
-}
-
 status__err frame__read(bpsp__connection* conn, bpsp__frame* frame) {
     // should we?
     /* ASSERT_ARG(frame, BPSP_INVALID_ARG); */
@@ -76,10 +23,15 @@ status__err frame__read(bpsp__connection* conn, bpsp__frame* frame) {
     ASSERT_BPSP_OK(s);
 
     bpsp__uint16 vars_size = datatype__d16(fixed_header);
+
     bpsp__uint8 opcode = datatype__d8(fixed_header + OFFSET_OPCODE);
-    frame__set_opcode(frame, opcode);
+    s = frame__set_opcode(frame, opcode);
+    ASSERT_BPSP_OK(s);
+
     bpsp__uint8 flag = datatype__d8(fixed_header + OFFSET_FLAG);
-    frame__set_flag(frame, flag);
+    s = frame__set_flag(frame, flag);
+    ASSERT_BPSP_OK(s);
+
     bpsp__uint32 data_size = datatype__d32(fixed_header + OFFSET_DATA_SIZE);
 
     /** read variables header **/
