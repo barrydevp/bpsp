@@ -95,7 +95,7 @@ For example the Authentication Frame contain the variable header for authenticat
 
 ### Data
 
-The sequence of bytes represent the data of the frame, you can use variable header to inform receiver the content-type of the data, eg: `"content-type""text"`.
+The sequence of bytes represent the data of the frame, you can use variable header to inform receiver the content-type of the data, eg: `"content-type""text";`.
 
 # Topics
 
