@@ -27,3 +27,4 @@ file(GLOB SRCS ${PROJECT_SOURCE_DIR}/server/*.c)
 # BUILD BIN
 add_executable(server ${SRCS})
 target_link_libraries(server bpsp)
+

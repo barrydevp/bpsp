@@ -56,7 +56,9 @@ status__err broker__close(bpsp__broker* broker) {
 
     s = net__close(broker->listener);
 
-    if (s != BPSP_OK) {
+    IFN_OK(s) {
+        log__error("Unexpected close broker: %s", ERR_TEXT(s));
+
         return s;
     }
 

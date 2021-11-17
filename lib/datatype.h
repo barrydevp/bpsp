@@ -9,6 +9,7 @@ typedef uint8_t bpsp__byte;
 typedef uint8_t bpsp__uint8;
 typedef uint16_t bpsp__uint16;
 typedef uint32_t bpsp__uint32;
+typedef uint64_t bpsp__uint64;
 typedef uint64_t bpsp__uintvar;
 
 /** core **/

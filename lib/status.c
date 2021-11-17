@@ -6,7 +6,7 @@ static const char* err_text[] = {
     "Error",
     "Protocol Error",
     "IO Error",
-    "Line too long",
+    "Maximum Variable Headers Exceeded (65 KB)",
 
     "Connection Closed",
     "No server available for connection",
@@ -21,16 +21,18 @@ static const char* err_text[] = {
 
     "TCP Address missing",
 
-    "Invalid Subject",
+    "Invalid Opcode",
+    "Invalid Topic",
     "Invalid Argument",
-    "Invalid Subscription",
-    "Invalid Timeout",
+    "Not completed frame",
+    "Invalid Subscriber",
+    "Invalid Variable Headers",
 
     "Illegal State",
 
     "Slow Consumer, messages dropped",
 
-    "Maximum Payload Exceeded",
+    "Maximum Payload Exceeded (4 GB)",
     "Maximum Messages Delivered",
 
     "Insufficient Buffer",

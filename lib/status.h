@@ -1,16 +1,37 @@
 #ifndef _STATUS_H_
 #define _STATUS_H_
 
+#define __EMPTY__
+
+#define ERR_TEXT(s) status__get_text(s)
+
+#define ASSERT_ARG(cond, ret) \
+    if (!(cond)) {            \
+        return ret;           \
+    }
+
+#define IFN_OK(s) if (s != BPSP_OK)
+
+#if defined(DEBUG)
+#define ASSERT_BPSP_OK(s)        \
+    IFN_OK(s) {                  \
+        log__error(ERR_TEXT(s)); \
+        return s;                \
+    }
+#else
+#define ASSERT_BPSP_OK(s) IFN_OK(s) return s
+#endif
+
 typedef enum {
 
     BPSP_OK = 0,  ///< Success
 
-    BPSP_ERR,             ///< Generic error
-    BPSP_PROTOCOL_ERROR,  ///< Error when parsing a protocol message,
-                          ///  or not getting the expected message.
-    BPSP_IO_ERROR,        ///< IO Error (network communication).
-    BPSP_LINE_TOO_LONG,   ///< The protocol message read from the socket
-                          ///  does not fit in the read buffer.
+    BPSP_ERR,              ///< Generic error
+    BPSP_PROTOCOL_ERROR,   ///< Error when parsing a protocol message,
+                           ///  or not getting the expected message.
+    BPSP_IO_ERROR,         ///< IO Error (network communication).
+    BPSP_MAX_VAR_HEADERS,  ///< The protocol message read from the socket
+                           ///  does not fit in the read buffer.
 
     BPSP_CONNECTION_CLOSED,           ///< Operation on this connection failed because
                                       ///  the connection is closed.
@@ -32,13 +53,15 @@ typedef enum {
     BPSP_ADDRESS_MISSING,  ///< Incorrect URL. For instance no host specified in
                            ///  the URL.
 
-    BPSP_INVALID_SUBJECT,       ///< Invalid subject, for instance NULL or empty string.
-    BPSP_INVALID_ARG,           ///< An invalid argument is passed to a function. For
-                                ///  instance passing NULL to an API that does not
-                                ///  accept this value.
-    BPSP_INVALID_SUBSCRIPTION,  ///< The call to a subscription function fails because
-                                ///  the subscription has previously been closed.
-    BPSP_INVALID_TIMEOUT,       ///< Timeout must be positive numbers.
+    BPSP_INVALID_OPCODE,       ///< An invalid opcode
+    BPSP_INVALID_TOPIC,        ///< Invalid subject, for instance NULL or empty string.
+    BPSP_INVALID_ARG,          ///< An invalid argument is passed to a function. For
+                               ///  instance passing NULL to an API that does not
+                               ///  accept this value.
+    BPSP_NOT_COMPLETED_FRAME,  ///< The frame is not completed to operate on
+    BPSP_INVALID_SUBSCRIBER,   ///< The call to a subscription function fails because
+                               ///  the subscription has previously been closed.
+    BPSP_INVALID_VAR_HEADERS,      ///< Invalid variable headers.
 
     BPSP_ILLEGAL_STATE,  ///< An unexpected state, for instance calling
                          ///  #natsSubscription_NextMsg() on an asynchronous
@@ -89,5 +112,7 @@ typedef enum {
                             ///< server heartbeats have been missed.
 
 } status__err;
+
+const char* status__get_text(status__err s);
 
 #endif  // _STATUS_H_

@@ -40,13 +40,15 @@ void* server__handle_client(void* arg) {
     while (s == BPSP_OK) {
         s = net__read(client->conn, buf, 100, &n_read, 0);
 
-        if (s != BPSP_OK) {
+        IFN_OK(s) {
             perror("net_read()");
             log__error("Fine");
             break;
         }
+
         s = net__write(client->conn, "test", 4, &n_write, 1);
-        if (s != BPSP_OK) {
+
+        IFN_OK(s) {
             perror("net__write()");
             break;
         }
@@ -87,6 +89,8 @@ int main(int argc, char* argv[]) {
     if (argc > 2) {
         listen_addr = argv[2];
     }
+
+    bpsp__uint16 value = 65535;
 
     // Signals
     signal(SIGPIPE, SIG_IGN);

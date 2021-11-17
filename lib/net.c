@@ -283,6 +283,7 @@ status__err net__read(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* 
         }
 
         if (n < 0) {
+            log__error("IO Error net__read()");
             s = BPSP_IO_ERROR;
             break;
         }

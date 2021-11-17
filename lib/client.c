@@ -160,7 +160,7 @@ status__err client__close(bpsp__client* client) {
 
     s = net__close(client->conn);
 
-    if (s != BPSP_OK) {
+    IFN_OK(s) {
         return s;
     }
 
