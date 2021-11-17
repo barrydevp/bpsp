@@ -14,9 +14,11 @@ include(CPack)
 
 # ANOTHER CMAKE
 add_subdirectory(lib)
+add_subdirectory(test)
 
 # SOURCE
-file(GLOB SRCS ${PROJECT_SOURCE_DIR}/server/*.c)
+file(GLOB SERVER_SRCS ${PROJECT_SOURCE_DIR}/server/*.c)
+file(GLOB CLIENT_SRCS ${PROJECT_SOURCE_DIR}/client/*.c)
 
 # LINK
 # link_directories(lib)
@@ -25,6 +27,9 @@ file(GLOB SRCS ${PROJECT_SOURCE_DIR}/server/*.c)
 # add_library(bpsp STATIC ${LIBS})
 
 # BUILD BIN
-add_executable(server ${SRCS})
+add_executable(server ${SERVER_SRCS})
 target_link_libraries(server bpsp)
+
+add_executable(client ${CLIENT_SRCS})
+target_link_libraries(client bpsp)
 

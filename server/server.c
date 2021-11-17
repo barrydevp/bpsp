@@ -33,26 +33,27 @@ void* server__handle_client(void* arg) {
 
     status__err s = BPSP_OK;
 
-    ssize_t n_write = 0;
-    ssize_t n_read = 0;
-    bpsp__byte buf[100];
+    bpsp__frame* in = frame__new();
 
     while (s == BPSP_OK) {
-        s = net__read(client->conn, buf, 100, &n_read, 0);
+        s = frame__read(client->conn, in);
 
         IFN_OK(s) {
-            perror("net_read()");
-            log__error("Fine");
+            perror("frame__read()");
             break;
         }
 
-        s = net__write(client->conn, "test", 4, &n_write, 1);
+        /* frame__print(in); */
+
+        s = frame__write(client->conn, in);
 
         IFN_OK(s) {
-            perror("net__write()");
+            perror("frame__write()");
             break;
         }
     }
+
+    frame__free(in);
 
     client__free(client);
 

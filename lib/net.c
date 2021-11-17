@@ -275,7 +275,7 @@ status__err net__read(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* 
     while (*n_read < size) {
         n = recv(conn->sockfd, buf + *n_read, size - *n_read, 0);
 
-        log__debug("Received %d bytes", n);
+        /* log__debug("Received %d bytes", n); */
 
         if (n == 0) {
             s = BPSP_CONNECTION_CLOSED;
@@ -312,7 +312,7 @@ status__err net__write(bpsp__connection* conn, void* buf, ssize_t size, ssize_t*
     while (*n_write < size) {
         n = send(conn->sockfd, buf + *n_write, size - *n_write, MSG_NOSIGNAL);
 
-        log__debug("Send %d bytes", n);
+        /* log__debug("Send %d bytes", n); */
 
         if (n == 0) {
             s = BPSP_CONNECTION_CLOSED;

@@ -107,7 +107,7 @@ status__err frame__write(bpsp__connection* conn, bpsp__frame* frame) {
     n_write = 0;
     ASSERT_BPSP_OK(s);
 
-    /** read variables header **/
+    /** write variables header **/
     if (frame->vars_size > 0) {
         bpsp__byte* var_hdr_buf = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * frame->vars_size);
         ASSERT_ARG(var_hdr_buf, BPSP_NO_MEMORY);

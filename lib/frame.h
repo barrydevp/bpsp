@@ -61,6 +61,7 @@ status__err frame__set_flag(bpsp__frame* frame, bpsp__uint8 flag);
 status__err frame__malloc_payload(bpsp__frame* frame, bpsp__uint32 data_size);
 status__err frame__is_completed(bpsp__frame* frame);
 status__err frame__build(bpsp__frame* frame);
+void frame__print(bpsp__frame* frame);
 
 /** read **/
 status__err frame__read(bpsp__connection* conn, bpsp__frame* frame);

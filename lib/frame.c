@@ -214,7 +214,7 @@ status__err frame__set_var_header(bpsp__frame* frame, const char* key, const cha
 status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size) {
     status__err s = BPSP_OK;
 
-    log__debug("size: %u - buf: %s", size, buf);
+    /* log__debug("size: %u - buf: %s", size, buf); */
 
     if (size == 0) {
         return s;
@@ -277,6 +277,8 @@ status__err frame__set_opcode(bpsp__frame* frame, bpsp__uint8 opcode) {
 
     s = frame__validate_opcode(opcode);
 
+    ASSERT_BPSP_OK(s);
+
     frame->opcode = opcode;
 
     return s;
@@ -287,7 +289,7 @@ status__err frame__set_flag(bpsp__frame* frame, bpsp__uint8 flag) {
 
     status__err s = BPSP_OK;
 
-    frame->opcode = flag;
+    frame->flag = flag;
 
     return s;
 }
@@ -354,6 +356,39 @@ status__err frame__build(bpsp__frame* frame) {
     return s;
 
 RET_ERROR:
-    log__error("frame__build() error: ", ERR_TEXT(s));
+    log__error("frame__build() error: %s", ERR_TEXT(s));
     return s;
+}
+
+void frame__print(bpsp__frame* frame) {
+    printf("[\tFRAME\t\t]\n");
+
+    if (frame) {
+        printf("--Fixed Header--\n");
+        printf("|var size| |opcode| |flag|\n");
+        printf("|%u| |%u| |%u|\n", frame->vars_size, frame->opcode, frame->flag);
+        printf("|data size|\n");
+        printf("|%u|\n", frame->data_size);
+
+        printf("--Var Headers--\n");
+        bpsp__var_header *var_header, *tmp;
+        HASH_ITER(hh, frame->var_headers, var_header, tmp) {
+            printf("\"%s\"\"%s\";\n", var_header->key, var_header->value);
+        }
+
+        printf("--Data Payload--\n");
+        if (frame->data_size > 0) {
+            char* payload = mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
+            mem__memcpy(payload, frame->payload, frame->data_size);
+            printf("%s\n", payload);
+            mem__free(payload);
+        } else {
+            printf("NULL\n");
+        }
+
+    } else {
+        printf("NULL\n");
+    }
+
+    printf("[-------------------]\n");
 }

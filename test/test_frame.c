@@ -1,9 +1,8 @@
 #include "frame.h"
-
 #include "log.h"
 #include "mem.h"
 
-int main() {
+void test__frame_var_headers() {
     bpsp__frame* frame = frame__new();
 
     if (!frame) {
@@ -75,6 +74,11 @@ int main() {
     frame__empty(frame);
 
     frame__free(frame);
+}
+
+int main() {
+    // test cases
+    test__frame_var_headers();
 
     return 0;
 }
