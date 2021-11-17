@@ -69,6 +69,9 @@ status__err frame__read(bpsp__connection* conn, bpsp__frame* frame);
 /** write **/
 status__err frame__write(bpsp__connection* conn, bpsp__frame* frame);
 
+/** frame op **/
+
+
 /** test **/
 status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size);
 

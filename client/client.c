@@ -12,9 +12,9 @@
 
 #include "broker.h"
 #include "log.h"
+#include "mem.h"
 #include "status.h"
 #include "uthash.h"
-#include "mem.h"
 
 #define DEFAULT_PORT 29010
 #define DEFAULT_ADDR "127.0.0.1"
@@ -103,7 +103,6 @@ void __loop(bpsp__connection* conn) {
     int count = 0;
 
     while (s == BPSP_OK && count < 100) {
-
         s = frame__write(conn, out);
 
         IFN_OK(s) {

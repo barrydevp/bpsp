@@ -30,7 +30,6 @@ Basic Publish Subscribe Protocol (BPSP)
 ```
 
 ## Data representation
-
 ### Bits
 
 `0` `1`
@@ -96,6 +95,24 @@ For example the Authentication Frame contain the variable header for authenticat
 ### Data
 
 The sequence of bytes represent the data of the frame, you can use variable header to inform receiver the content-type of the data, eg: `"content-type""text";`.
+
+# BPSP Control Frame
+
+## Opcode
+
+<table>
+<thead><tr><th>Opcode</th><th>Value</th><th>Sent By</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>`INFO`</td><td>`1`</td>Server<td></td>Sent to client after initial TCP connection to inform about server.<td></td></tr>
+<tr><td>`CONNECT`</td><td>`2`</td>Client<td></td>Sent to server to specify connection information after received `INFO`.<td></td></tr>
+<tr><td>`PUB`</td><td>`3`</td>Client<td></td>Publish a message to a topic.<td></td></tr>
+<tr><td>`SUB`</td><td>`4`</td>Client<td></td>Subscribe to a topic.<td></td></tr>
+<tr><td>`UNSUB`</td><td>`5`</td>Client<td></td>Unsubscribe to a topic.<td></td></tr>
+<tr><td>`MSG`</td><td>`6`</td>Server<td></td>Delivers a message to responsible subscriber.<td></td></tr>
+<tr><td>`+OK`</td><td>`7`</td>Server<td></td>Positive acknowledges.<td></td></tr>
+<tr><td>`-ERR`</td><td>`8`</td>Server<td></td>Negative acfknowledges may cause client to disconnect.<td></td></tr>
+</tbody>
+</table>
 
 # Topics
 
