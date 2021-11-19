@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
+#include <pthread.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -12,11 +13,11 @@
 #include "status.h"
 
 status__err connection__close(bpsp__connection* conn) {
-    status__err s = BPSP_OK;
+    // should we lock when close connection?
 
-    if (!conn) {
-        return s;
-    }
+    ASSERT_ARG(conn, BPSP_OK);
+
+    status__err s = BPSP_OK;
 
     if (conn->sockfd > 0) {
         log__info("Closing connection %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
@@ -39,6 +40,8 @@ void connection__free(bpsp__connection* conn) {
         conn->addr = NULL;
     }
 
+    pthread_mutex_destroy(&conn->net_mutex);
+
     mem__free(conn);
 }
 
@@ -54,6 +57,7 @@ bpsp__connection* connection__create(int sockfd, struct sockaddr_in* addr, net__
     conn->addr = addr;
     conn->state = state;
     conn->type = type;
+    pthread_mutex_init(&conn->net_mutex, NULL);
 
     return conn;
 }
@@ -250,13 +254,9 @@ void net__destroy(bpsp__connection* conn) {
 }
 
 status__err net__close(bpsp__connection* conn) {
-    status__err s = BPSP_OK;
+    ASSERT_ARG(conn, BPSP_OK);
 
-    if (!conn) {
-        return s;
-    }
-
-    connection__close(conn);
+    status__err s = connection__close(conn);
 
     return s;
 }
@@ -299,6 +299,8 @@ status__err net__read(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* 
 }
 
 status__err net__write(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_write, uint8_t block) {
+    ASSERT_ARG(conn, BPSP_INVALID_ARG);
+
     status__err s = BPSP_OK;
     *n_write = 0;
 
@@ -306,7 +308,7 @@ status__err net__write(bpsp__connection* conn, void* buf, ssize_t size, ssize_t*
         return s;
     }
 
-    assert(buf);
+    ASSERT_ARG(buf, BPSP_INVALID_ARG);
     ssize_t n = 0;
 
     while (*n_write < size) {
@@ -330,5 +332,25 @@ status__err net__write(bpsp__connection* conn, void* buf, ssize_t size, ssize_t*
             break;
         }
     }
+    return s;
+}
+
+status__err net__read_lock(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_read, uint8_t block) {
+    ASSERT_ARG(conn, BPSP_INVALID_ARG);
+
+    pthread_mutex_lock(&conn->net_mutex);
+    status__err s = net__read(conn, buf, size, n_read, block);
+    pthread_mutex_unlock(&conn->net_mutex);
+
+    return s;
+}
+
+status__err net__write_lock(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_write, uint8_t block) {
+    ASSERT_ARG(conn, BPSP_INVALID_ARG);
+
+    pthread_mutex_lock(&conn->net_mutex);
+    status__err s = net__read(conn, buf, size, n_write, block);
+    pthread_mutex_unlock(&conn->net_mutex);
+
     return s;
 }

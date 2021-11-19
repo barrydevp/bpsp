@@ -1,7 +1,3 @@
-# PROJECT INFO
-cmake_minimum_required(VERSION 3.0.0)
-project(bpsp VERSION 1.0.0)
-
 # COMPILER
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pthread")
 
@@ -17,3 +13,6 @@ add_executable(test_frame test_frame.c)
 target_link_libraries(test_frame bpsp)
 add_test(frame test_frame)
 
+add_executable(test_topic test_topic.c)
+target_link_libraries(test_topic bpsp)
+add_test(topic test_topic)

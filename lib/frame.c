@@ -440,7 +440,7 @@ RET_ERROR:
 }
 
 void frame__print(bpsp__frame* frame) {
-    printf("[\tFRAME\t\t]\n");
+    printf("[FRAME]\n");
 
     if (frame) {
         printf("--Fixed Header--\n");
@@ -468,6 +468,4 @@ void frame__print(bpsp__frame* frame) {
     } else {
         printf("NULL\n");
     }
-
-    printf("[-------------------]\n");
 }

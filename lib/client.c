@@ -1,12 +1,37 @@
 #include "client.h"
 
 #include <assert.h>
+#include <pthread.h>
 
+#include "broker.h"
 #include "log.h"
 #include "mem.h"
 #include "net.h"
 #include "status.h"
 #include "utarray.h"
+
+void subscriber__ctor(void* elt) {
+    ASSERT_ARG(elt, __EMPTY__);
+    bpsp__subscriber* sub = (bpsp__subscriber*)elt;
+
+    memset(sub, 0, sizeof(*sub));
+}
+
+bpsp__subscriber* subscriber__new(char* topic, bpsp__client* client, topic__node* node) {
+    ASSERT_ARG(topic, NULL);
+
+    bpsp__subscriber* sub = (bpsp__subscriber*)mem__malloc(sizeof(bpsp__subscriber));
+
+    ASSERT_ARG(sub, NULL);
+
+    subscriber__ctor((void*)sub);
+
+    sub->topic = mem__strdup(topic);
+    sub->client = client;
+    sub->node = node;
+
+    return sub;
+}
 
 void subscriber__copy(void* _dst, const void* _src) {
     bpsp__subscriber* dst = (bpsp__subscriber*)_dst;
@@ -17,6 +42,7 @@ void subscriber__copy(void* _dst, const void* _src) {
     }
 
     dst->client = src->client;
+    dst->node = src->node;
 }
 
 void subscriber__dtor(void* _elt) {
@@ -35,13 +61,26 @@ void subscriber__free(bpsp__subscriber* sub) {
     }
 
     subscriber__dtor((void*)sub);
-    mem__free(sub->topic);
+    mem__free(sub);
 }
 
-void client__init(void* _elt) { bpsp__client* c = (bpsp__client*)_elt; }
+void client__init(void* elt) {
+    ASSERT_ARG(elt, __EMPTY__);
+
+    bpsp__client* c = (bpsp__client*)elt;
+    memset(c, 0, sizeof(*c));
+
+    utarray_new(c->subs, &bpsp__subscriber_icd);
+    pthread_mutex_init(&c->cli_mutex, NULL);
+    pthread_cond_init(&c->ref_cond, NULL);
+    c->in_frame = frame__new();
+    assert(c->in_frame);
+    c->out_frame = frame__new();
+    assert(c->out_frame);
+}
 
 bpsp__client* client__new(bpsp__connection* conn) {
-    assert(conn);
+    ASSERT_ARG(conn, NULL);
 
     bpsp__client* c = (bpsp__client*)mem__malloc(sizeof(bpsp__client));
 
@@ -53,36 +92,9 @@ bpsp__client* client__new(bpsp__connection* conn) {
 
     client__init((void*)c);
 
-    utarray_new(c->subs, &bpsp__subscriber_icd);
-
-    bpsp__byte* inbound = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * BPSP_CLIENT_BUFFER_SIZE);
-    if (!inbound) {
-        log__error("Cannot malloc outbound()");
-        goto RET_ERROR;
-    }
-
-    bpsp__byte* outbound = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * BPSP_CLIENT_BUFFER_SIZE);
-    if (!outbound) {
-        log__error("Cannot malloc outbound()");
-        mem__free(inbound);
-        goto RET_ERROR;
-    }
-
-    memset(inbound, 0, sizeof(bpsp__byte) * BPSP_CLIENT_BUFFER_SIZE);
-    memset(outbound, 0, sizeof(bpsp__byte) * BPSP_CLIENT_BUFFER_SIZE);
-
     c->conn = conn;
-    c->inbound = inbound;
-    c->n_inbound = 0;
-    c->outbound = outbound;
-    c->n_outbound = 0;
 
     return c;
-
-RET_ERROR:
-    utarray_free(c->subs);
-    mem__free(c);
-    return NULL;
 }
 
 void client__copy(void* _dst, const void* _src) {
@@ -95,25 +107,6 @@ void client__copy(void* _dst, const void* _src) {
     if (src->conn) {
         dst->conn = net__dup(src->conn);
     }
-
-    bpsp__byte* inbound = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * BPSP_CLIENT_BUFFER_SIZE);
-    if (!inbound) {
-        log__error("Cannot malloc outbound()");
-    } else {
-        mem__memcpy(inbound, src->inbound, src->n_inbound * sizeof(*inbound));
-    }
-
-    bpsp__byte* outbound = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * BPSP_CLIENT_BUFFER_SIZE);
-    if (!outbound) {
-        log__error("Cannot malloc outbound()");
-    } else {
-        mem__memcpy(outbound, src->outbound, src->n_outbound * sizeof(*outbound));
-    }
-
-    dst->inbound = inbound;
-    dst->n_inbound = 0;
-    dst->outbound = outbound;
-    dst->n_outbound = 0;
 }
 
 void client__dtor(void* _elt) {
@@ -130,15 +123,8 @@ void client__dtor(void* _elt) {
         utarray_free(elt->subs);
     }
 
-    if (elt->inbound) {
-        mem__free(elt->inbound);
-        elt->inbound = NULL;
-    }
-
-    if (elt->outbound) {
-        mem__free(elt->outbound);
-        elt->outbound = NULL;
-    }
+    pthread_mutex_destroy(&elt->cli_mutex);
+    pthread_cond_destroy(&elt->ref_cond);
 }
 
 void client__free(bpsp__client* client) {
@@ -154,13 +140,74 @@ void client__free(bpsp__client* client) {
 status__err client__close(bpsp__client* client) {
     status__err s = BPSP_OK;
 
-    if (!client) {
-        return s;
+    ASSERT_ARG(client, s);
+
+    s = net__close(client->conn);
+
+    return s;
+}
+
+status__err client__destroy(bpsp__client* client) {
+    ASSERT_ARG(client, BPSP_OK);
+
+    status__err s = BPSP_OK;
+
+    pthread_mutex_lock(&client->cli_mutex);
+    while (client->ref_count > 0) {
+        pthread_cond_wait(&client->ref_cond, &client->cli_mutex);
     }
 
     s = net__close(client->conn);
 
-    IFN_OK(s) { return s; }
+    pthread_mutex_unlock(&client->cli_mutex);
+
+    ASSERT_BPSP_OK(s);
+
+    client__free(client);
+
+    return s;
+}
+
+void client__inc_ref(bpsp__client* client) {
+    pthread_mutex_lock(&client->cli_mutex);
+    client->ref_count += 1;
+    pthread_mutex_unlock(&client->cli_mutex);
+}
+
+void client__dec_ref(bpsp__client* client) {
+    pthread_mutex_lock(&client->cli_mutex);
+    client->ref_count -= 1;
+
+    if (client->ref_count == 0) {
+        pthread_cond_signal(&client->ref_cond);
+    }
+    pthread_mutex_unlock(&client->cli_mutex);
+}
+
+status__err client__read(bpsp__client* client) {
+    ASSERT_ARG(client, BPSP_INVALID_ARG);
+
+    status__err s = BPSP_OK;
+
+    client__inc_ref(client);
+
+    s = frame__read(client->conn, client->in_frame);
+
+    client__dec_ref(client);
+
+    return s;
+}
+
+status__err client__write(bpsp__client* client) {
+    ASSERT_ARG(client, BPSP_INVALID_ARG);
+
+    status__err s = BPSP_OK;
+
+    client__inc_ref(client);
+
+    s = frame__write(client->conn, client->out_frame);
+
+    client__dec_ref(client);
 
     return s;
 }

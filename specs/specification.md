@@ -191,3 +191,22 @@ struct topic__node root;
 
 ```
 
+Print Tree for theres topic `locationA/sensorA/*`, `locationA/sensorA/uptime`, `locationA/sensorA/downtime`, `locationA/sensorA/uptime`, `locationA/sensorA/+`, `locationB/sensorB`, `locationB/*` `locationB/+/uptime` 
+
+```
+─ #root (0)
+   │─ locationA (0)
+   │   │─ + (0)
+   │   │   │─ uptime (1)
+   │   │─ sensorA (0)
+   │   │   │─ * (1)
+   │   │   │─ + (1)
+   │   │   │─ uptime (2)
+   │   │   │─ downtime (1)
+   │─ locationB (0)
+   │   │─ * (1)
+   │   │─ + (0)
+   │   │   │─ uptime (1)
+   │   │─ sensorB (1)
+```
+

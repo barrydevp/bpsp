@@ -1,6 +1,7 @@
 #ifndef _FRAME_H_
 #define _FRAME_H_
 
+#include "bpsp.h"
 #include "datatype.h"
 #include "net.h"
 #include "status.h"
@@ -28,7 +29,7 @@ typedef enum {
 
 typedef char** bpsp__var_header_pair;  // must be char[2]
 
-typedef struct {
+struct bpsp__var_header {
     char* key;
     bpsp__uint16 n_key;
     char* value;
@@ -36,9 +37,9 @@ typedef struct {
 
     /** uthash.h **/
     UT_hash_handle hh;
-} bpsp__var_header;
+};
 
-typedef struct bpsp__frame {
+struct bpsp__frame {
     /** Fixed Header **/
     bpsp__uint16 vars_size;
     bpsp__uint8 opcode;
@@ -59,7 +60,7 @@ typedef struct bpsp__frame {
     /* struct bpsp__frame* next; */
     bpsp__uint8 _is_completed;
 
-} bpsp__frame;
+};
 
 /** core **/
 

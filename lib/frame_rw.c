@@ -101,7 +101,7 @@ status__err frame__write(bpsp__connection* conn, bpsp__frame* frame) {
     datatype__e8(frame->flag, fixed_header + OFFSET_FLAG);
     datatype__e32(frame->data_size, fixed_header + OFFSET_DATA_SIZE);
 
-    s = net__write(conn, fixed_header, FIXED_HEADER_SIZE, &n_write, 1);
+    s = net__write_lock(conn, fixed_header, FIXED_HEADER_SIZE, &n_write, 1);
     n_write = 0;
     ASSERT_BPSP_OK(s);
 
