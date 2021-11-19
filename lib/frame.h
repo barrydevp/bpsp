@@ -81,13 +81,14 @@ status__err frame__malloc_payload(bpsp__frame* frame, bpsp__uint32 data_size);
 status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size, bpsp__uint8 append);
 status__err frame__is_completed(bpsp__frame* frame);
 status__err frame__build(bpsp__frame* frame);
+status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build);
 void frame__print(bpsp__frame* frame);
 
 /** read **/
-status__err frame__read(bpsp__connection* conn, bpsp__frame* frame);
+status__err frame__recv(bpsp__connection* conn, bpsp__frame* frame);
 
 /** write **/
-status__err frame__write(bpsp__connection* conn, bpsp__frame* frame);
+status__err frame__send(bpsp__connection* conn, bpsp__frame* frame);
 
 /** frame op **/
 status__err frame__INFO(bpsp__frame* frame, bpsp__byte* info, uint32_t size);

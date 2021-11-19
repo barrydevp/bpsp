@@ -4,12 +4,13 @@
 
 #include "bpsp.h"
 #include "client.h"
+#include "log.h"
 #include "mem.h"
 #include "status.h"
 #include "utarray.h"
 #include "uthash.h"
 
-void topic__free_hash_node(topic__hash_node* hsh) {
+void topic__free_hash_node_elt(topic__hash_node* hsh) {
     ASSERT_ARG(hsh, __EMPTY__);
 
     if (hsh->node) {
@@ -34,15 +35,25 @@ void topic__dtor_node(topic__node* node) {
         topic__free_node(node->sl_node);
     }
 
+    /* if (node->subs) { */
+    /*     utarray_free(node->subs); */
+    /* } */
+
     if (node->subs) {
-        utarray_free(node->subs);
+        subscriber__hash *_sub, *tmp;
+        HASH_ITER(hh, node->subs, _sub, tmp) {
+            HASH_DEL(node->subs, _sub);       // delete it (users advances to next)
+            subscriber__free_hash_elt(_sub);  // free it
+        }
+
+        HASH_CLEAR(hh, node->nodes);
     }
 
     if (node->nodes) {
         topic__hash_node *_node, *tmp;
         HASH_ITER(hh, node->nodes, _node, tmp) {
-            HASH_DEL(node->nodes, _node); /* delete it (users advances to next) */
-            topic__free_hash_node(_node); /* free it */
+            HASH_DEL(node->nodes, _node);     /* delete it (users advances to next) */
+            topic__free_hash_node_elt(_node); /* free it */
         }
 
         HASH_CLEAR(hh, node->nodes);
@@ -63,7 +74,7 @@ status__err topic__init_node(topic__node* node) {
 
     status__err s = BPSP_OK;
 
-    utarray_new(node->subs, &bpsp__subscriber_icd);  // all subscribers match until end current token
+    /* utarray_new(node->subs, &bpsp__subscriber_icd);  // all subscribers match until end current token */
 
     return s;
 }
@@ -88,9 +99,14 @@ status__err topic__node_add_sub(topic__node* node, bpsp__subscriber* sub) {
     ASSERT_ARG(sub, BPSP_INVALID_ARG);
 
     sub->node = node;
-    utarray_push_back(node->subs, sub);
+    /* utarray_push_back(node->subs, sub); */
+    subscriber__hash* hsh_sub = subscriber__new_hash_elt(sub->_id, sub);
 
-    bpsp__subscriber* _sub = (bpsp__subscriber*)utarray_back(node->subs);
+    ASSERT_ARG(hsh_sub, BPSP_NO_MEMORY);
+
+    HASH_ADD_STR(node->subs, key, hsh_sub);
+
+    /* bpsp__subscriber* _sub = (bpsp__subscriber*)utarray_back(node->subs); */
 
     return BPSP_OK;
 }
@@ -103,7 +119,7 @@ topic__hash_node* topic__new_hash_node(char* token) {
     topic__node* node = topic__new_node();
 
     if (!node) {
-        topic__free_hash_node(hsh_node);
+        topic__free_hash_node_elt(hsh_node);
 
         return NULL;
     }
@@ -203,12 +219,14 @@ char* topic__next_token(char* cur_tok) { return cur_tok + strlen(cur_tok) + 1; }
 status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub) {
     ASSERT_ARG(tree, BPSP_INVALID_ARG);
     ASSERT_ARG(sub, BPSP_INVALID_ARG);
+    ASSERT_ARG(sub->_id, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
 
     char* first_tok;
     uint16_t n_tok = 0;
-    s = topic__extract_token(sub->topic, &n_tok, &first_tok);
+    char* topic = sub->_id + sizeof(sub->client->_id) + 1;
+    s = topic__extract_token(topic, &n_tok, &first_tok);
 
     ASSERT_BPSP_OK(s);
 
@@ -252,7 +270,7 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
             cur_node = cur_node->sl_node;
 
         } else {
-            topic__hash_node* hsh = topic__new_hash_node(cur_tok);
+            topic__hash_node* hsh;
 
             HASH_FIND_STR(cur_node->nodes, cur_tok, hsh);
 
@@ -294,16 +312,38 @@ RET_ERROR:
     return s;
 }
 
-/* status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub) { return s; } */
+status__err topic__del_subscriber(bpsp__subscriber* sub) {
+    status__err s = BPSP_OK;
+
+    if (!sub->node) {
+        return s;
+    }
+
+    topic__node* node = sub->node;
+    if (!sub->_id) {
+        log__error("Illegal subscriber to delete");
+        return BPSP_INVALID_SUBSCRIBER;
+    }
+
+    /* utarray_erase(node->subs, sub->idx_on_node, 1); */
+    subscriber__hash* hsh = NULL;
+    HASH_FIND_STR(node->subs, sub->_id, hsh);
+
+    if (hsh) {
+        HASH_DEL(node->subs, hsh);
+        subscriber__free_hash_elt(hsh);
+    }
+
+    return s;
+}
 
 void print_node(topic__node* node, char* token, int deep) {
     if (node) {
         for (int i = 0; i < deep; i++) {
             printf("   │");
-            /* printf(" "); */
         }
-        printf("─ %s (%d)\n", token, utarray_len(node->subs));
-        /* printf("- %s (%d)\n", token, utarray_len(node->subs)); */
+        /* printf("─ %s (%d)\n", token, utarray_len(node->subs)); */
+        printf("─ %s (%d)\n", token, HASH_COUNT(node->subs));
 
         if (node->ml_node) {
             print_node(node->ml_node, "*", deep + 1);

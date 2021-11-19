@@ -5,7 +5,7 @@
 #include "net.h"
 #include "status.h"
 
-status__err frame__read(bpsp__connection* conn, bpsp__frame* frame) {
+status__err frame__recv(bpsp__connection* conn, bpsp__frame* frame) {
     // should we?
     /* ASSERT_ARG(frame, BPSP_INVALID_ARG); */
 
@@ -84,7 +84,7 @@ status__err frame__read(bpsp__connection* conn, bpsp__frame* frame) {
     return s;
 }
 
-status__err frame__write(bpsp__connection* conn, bpsp__frame* frame) {
+status__err frame__send(bpsp__connection* conn, bpsp__frame* frame) {
     // should we?
     /* ASSERT_ARG(frame, BPSP_INVALID_ARG); */
 
@@ -101,7 +101,7 @@ status__err frame__write(bpsp__connection* conn, bpsp__frame* frame) {
     datatype__e8(frame->flag, fixed_header + OFFSET_FLAG);
     datatype__e32(frame->data_size, fixed_header + OFFSET_DATA_SIZE);
 
-    s = net__write_lock(conn, fixed_header, FIXED_HEADER_SIZE, &n_write, 1);
+    s = net__write(conn, fixed_header, FIXED_HEADER_SIZE, &n_write, 1);
     n_write = 0;
     ASSERT_BPSP_OK(s);
 

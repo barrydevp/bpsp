@@ -36,7 +36,7 @@ void* server__handle_client(void* arg) {
     bpsp__frame* in = frame__new();
 
     while (s == BPSP_OK) {
-        s = frame__read(client->conn, in);
+        s = frame__recv(client->conn, in);
 
         IFN_OK(s) {
             perror("frame__read()");
@@ -45,7 +45,7 @@ void* server__handle_client(void* arg) {
 
         /* frame__print(in); */
 
-        s = frame__write(client->conn, in);
+        s = frame__send(client->conn, in);
 
         IFN_OK(s) {
             perror("frame__write()");

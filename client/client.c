@@ -75,7 +75,7 @@ void* server__handle_client(void* arg) {
 }
 
 status__err echo(bpsp__connection* conn, bpsp__frame* frame) {
-    status__err s = frame__write(conn, frame);
+    status__err s = frame__send(conn, frame);
 
     IFN_OK(s) {
         log__error("frame__write() %s", ERR_TEXT(s));
@@ -83,7 +83,7 @@ status__err echo(bpsp__connection* conn, bpsp__frame* frame) {
         return s;
     }
 
-    s = frame__read(conn, frame);
+    s = frame__recv(conn, frame);
 
     IFN_OK(s) {
         log__error("frame__read() %s", ERR_TEXT(s));

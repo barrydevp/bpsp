@@ -40,7 +40,7 @@ void connection__free(bpsp__connection* conn) {
         conn->addr = NULL;
     }
 
-    pthread_mutex_destroy(&conn->net_mutex);
+    /* pthread_mutex_destroy(&conn->net_mutex); */
 
     mem__free(conn);
 }
@@ -57,7 +57,7 @@ bpsp__connection* connection__create(int sockfd, struct sockaddr_in* addr, net__
     conn->addr = addr;
     conn->state = state;
     conn->type = type;
-    pthread_mutex_init(&conn->net_mutex, NULL);
+    /* pthread_mutex_init(&conn->net_mutex, NULL); */
 
     return conn;
 }
@@ -338,9 +338,9 @@ status__err net__write(bpsp__connection* conn, void* buf, ssize_t size, ssize_t*
 status__err net__read_lock(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_read, uint8_t block) {
     ASSERT_ARG(conn, BPSP_INVALID_ARG);
 
-    pthread_mutex_lock(&conn->net_mutex);
+    /* pthread_mutex_lock(&conn->net_mutex); */
     status__err s = net__read(conn, buf, size, n_read, block);
-    pthread_mutex_unlock(&conn->net_mutex);
+    /* pthread_mutex_unlock(&conn->net_mutex); */
 
     return s;
 }
@@ -348,9 +348,9 @@ status__err net__read_lock(bpsp__connection* conn, void* buf, ssize_t size, ssiz
 status__err net__write_lock(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_write, uint8_t block) {
     ASSERT_ARG(conn, BPSP_INVALID_ARG);
 
-    pthread_mutex_lock(&conn->net_mutex);
+    /* pthread_mutex_lock(&conn->net_mutex); */
     status__err s = net__read(conn, buf, size, n_write, block);
-    pthread_mutex_unlock(&conn->net_mutex);
+    /* pthread_mutex_unlock(&conn->net_mutex); */
 
     return s;
 }

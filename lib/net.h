@@ -31,7 +31,7 @@ typedef enum {
 struct bpsp__connection {
     int sockfd;
     struct sockaddr_in* addr;
-    pthread_mutex_t net_mutex;
+    /* pthread_mutex_t net_mutex; */
 
     net__type type;
 
@@ -49,7 +49,5 @@ void net__destroy(bpsp__connection* conn);
 status__err net__close(bpsp__connection* conn);
 status__err net__read(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_read, uint8_t block);
 status__err net__write(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_write, uint8_t block);
-status__err net__read_lock(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_read, uint8_t block);
-status__err net__write_lock(bpsp__connection* conn, void* buf, ssize_t size, ssize_t* n_write, uint8_t block);
 
 #endif  // _NET_H_
