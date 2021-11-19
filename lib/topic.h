@@ -43,7 +43,8 @@ struct topic__node {
 };
 
 struct bpsp__topic_tree {
-    pthread_mutex_t tree_mutex;
+    pthread_mutex_t mutex;
+    pthread_rwlock_t rw_lock;
     topic__node root;
 };
 
@@ -60,7 +61,7 @@ bpsp__topic_tree* topic__new_tree();
 void topic__dtor_tree(bpsp__topic_tree* tree);
 void topic__free_tree(bpsp__topic_tree* tree);
 status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub);
-status__err topic__del_subscriber(bpsp__subscriber* sub);
+status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub, uint8_t lock);
 UT_array* topic__tree_find_subscribers(bpsp__topic_tree* tree, char* topic, uint8_t lock);
 
 void topic__print_tree(bpsp__topic_tree* tree);

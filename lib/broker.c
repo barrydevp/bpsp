@@ -108,7 +108,7 @@ bpsp__client* broker__accept(bpsp__broker* broker) {
         return NULL;
     }
 
-    bpsp__client* client = client__new(c_conn);
+    bpsp__client* client = client__new(c_conn, broker);
 
     if (!client) {
         log__error("NULL client__new()");

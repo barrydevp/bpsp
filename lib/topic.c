@@ -46,7 +46,7 @@ void topic__dtor_node(topic__node* node) {
             subscriber__free_hash_elt(_sub);  // free it
         }
 
-        HASH_CLEAR(hh, node->nodes);
+        HASH_CLEAR(hh, node->subs);
     }
 
     if (node->nodes) {
@@ -142,7 +142,8 @@ void topic__dtor_tree(bpsp__topic_tree* tree) {
 
     topic__dtor_node(&tree->root);
 
-    pthread_mutex_destroy(&tree->tree_mutex);
+    pthread_mutex_destroy(&tree->mutex);
+    pthread_rwlock_destroy(&tree->rw_lock);
 }
 
 void topic__free_tree(bpsp__topic_tree* tree) {
@@ -157,11 +158,15 @@ status__err topic__init_tree(bpsp__topic_tree* tree) {
     ASSERT_ARG(tree, BPSP_INVALID_ARG);
     memset(tree, 0, sizeof(*tree));
 
-    pthread_mutex_init(&tree->tree_mutex, NULL);
+    pthread_mutex_init(&tree->mutex, NULL);
+    pthread_rwlock_init(&tree->rw_lock, NULL);
 
     status__err s = topic__init_node(&tree->root);
 
-    IFN_OK(s) { pthread_mutex_destroy(&tree->tree_mutex); }
+    IFN_OK(s) {
+        pthread_mutex_destroy(&tree->mutex);
+        pthread_rwlock_destroy(&tree->rw_lock);
+    }
 
     return s;
 }
@@ -237,7 +242,8 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
 
     ASSERT_BPSP_OK(s);
 
-    pthread_mutex_lock(&tree->tree_mutex);
+    /* pthread_mutex_lock(&tree->mutex); */
+    pthread_rwlock_wrlock(&tree->rw_lock);
 
     topic__node* cur_node = &tree->root;
 
@@ -308,18 +314,19 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
 
     mem__free(first_tok);
 
-    pthread_mutex_unlock(&tree->tree_mutex);
+    /* pthread_mutex_unlock(&tree->mutex); */
+    pthread_rwlock_unlock(&tree->rw_lock);
 
     return s;
 RET_ERROR:
     mem__free(first_tok);
 
-    pthread_mutex_unlock(&tree->tree_mutex);
+    pthread_mutex_unlock(&tree->mutex);
 
     return s;
 }
 
-status__err topic__del_subscriber(bpsp__subscriber* sub) {
+status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub, uint8_t lock) {
     status__err s = BPSP_OK;
 
     if (!sub->node) {
@@ -332,6 +339,10 @@ status__err topic__del_subscriber(bpsp__subscriber* sub) {
         return BPSP_INVALID_SUBSCRIBER;
     }
 
+    if (lock) {
+        /* pthread_mutex_lock(&tree->mutex); */
+        pthread_rwlock_wrlock(&tree->rw_lock);
+    }
     /* utarray_erase(node->subs, sub->idx_on_node, 1); */
     subscriber__hash* hsh = NULL;
     HASH_FIND_STR(node->subs, sub->_id, hsh);
@@ -339,6 +350,11 @@ status__err topic__del_subscriber(bpsp__subscriber* sub) {
     if (hsh) {
         HASH_DEL(node->subs, hsh);
         subscriber__free_hash_elt(hsh);
+    }
+
+    if (lock) {
+        /* pthread_mutex_unlock(&tree->mutex); */
+        pthread_rwlock_unlock(&tree->rw_lock);
     }
 
     return s;
@@ -377,6 +393,7 @@ void topic__print_tree(bpsp__topic_tree* tree) {
     } else {
         printf("NULL\n");
     }
+    printf("\n");
 }
 
 int topic__node_subs_len(topic__node* node) {
@@ -478,13 +495,15 @@ UT_array* topic__tree_find_subscribers(bpsp__topic_tree* tree, char* topic, uint
     status__err s = topic__extract_token(topic, &n_tok, &first_tok);
 
     if (lock) {
-        pthread_mutex_lock(&tree->tree_mutex);
+        /* pthread_mutex_lock(&tree->mutex); */
+        pthread_rwlock_rdlock(&tree->rw_lock);
     }
 
     UT_array* subs = topic__node_find_subscribers(&tree->root, first_tok, n_tok);
 
     if (lock) {
-        pthread_mutex_unlock(&tree->tree_mutex);
+        /* pthread_mutex_unlock(&tree->mutex); */
+        pthread_rwlock_unlock(&tree->rw_lock);
     }
 
     mem__free(first_tok);

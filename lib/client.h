@@ -41,23 +41,27 @@ struct bpsp__client {
     // core
     char _id[BPSP_CLIENT_ID_LEN + 1];
     bpsp__broker* broker;
-    UT_array* subs;
+    /* UT_array* subs; */
+    subscriber__hash* subs;
     bpsp__connection* conn;
 
     // synchonization
     bpsp__uint16 ref_count;
     pthread_cond_t ref_cond;
     pthread_mutex_t cli_mutex;
-    pthread_mutex_t w_mutex;  // multiple thread may write same time but we assume only one thread read at a time,
-                              // so we use this mutex to lock write only
+    pthread_rwlock_t rw_lock;  // multiple thread may write same time but we assume only one thread read at a time,
+                                // so we use this mutex to lock write only
 
     // frame
     bpsp__frame* in_frame;
     bpsp__frame* out_frame;
+
+    /** uthash.h **/
+    UT_hash_handle hh;
 };
 
 void client__init(void* elt);
-bpsp__client* client__new(bpsp__connection* conn);
+bpsp__client* client__new(bpsp__connection* conn, bpsp__broker* broker);
 void client__copy(void* _dst, const void* _src);
 void client__dtor(void* _elt);
 void client__free(bpsp__client* client);
@@ -67,6 +71,8 @@ status__err client__recv(bpsp__client* client);
 status__err client__send(bpsp__client* client);
 status__err client__read(bpsp__client* client);
 status__err client__write(bpsp__client* client, bpsp__frame* frame);
+status__err client_sub(bpsp__client* client, char* topic, uint8_t lock);
+status__err client_unsub(bpsp__client* client, char* topic, uint8_t lock);
 
 static UT_icd bpsp__client_icd = {sizeof(bpsp__client), NULL, &client__copy, &client__dtor};
 static UT_icd bpsp__subscriber_icd = {sizeof(bpsp__subscriber), NULL, &subscriber__copy, &subscriber__dtor};

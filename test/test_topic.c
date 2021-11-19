@@ -19,7 +19,7 @@ void find_sub(bpsp__topic_tree* tree, char* topic) {
 }
 
 int main() {
-    bpsp__client* client = client__new(NULL);
+    bpsp__client* client = client__new(NULL, NULL);
     bpsp__topic_tree tree = {};
     topic__init_tree(&tree);
     bpsp__topic_tree* ptree = topic__new_tree();
@@ -52,8 +52,8 @@ int main() {
 
     sub = subscriber__new("locationA/sensorA/uptime", client, NULL);
     s = topic__add_subscriber(&tree, sub);
-    /* s = topic__del_subscriber(sub); */
-    /* s = topic__del_subscriber(sub1); */
+    s = topic__del_subscriber(&tree, sub, 1);
+    s = topic__del_subscriber(&tree, sub, 1);
     subscriber__free(sub);
     subscriber__free(sub1);
     subscriber__free(sub2);
