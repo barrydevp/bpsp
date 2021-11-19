@@ -52,7 +52,7 @@ char* subscriber__gen_id(char* topic, bpsp__client* client) {
     }
 
     mem__memmove(_id, client->_id, cli_id_len);
-    *(_id + cli_id_len) = '\\';
+    *(_id + cli_id_len) = '/';
     mem__memmove(_id + cli_id_len + 1, topic, topic_len);
     *(_id + cli_id_len + topic_len + 1) = '\0';
 
@@ -121,7 +121,7 @@ void client__init(void* elt) {
     bpsp__client* c = (bpsp__client*)elt;
     memset(c, 0, sizeof(*c));
 
-    rand_str(c->_id, CLIENT_ID_LEN);
+    rand_str(c->_id, BPSP_CLIENT_ID_LEN);
     utarray_new(c->subs, &bpsp__subscriber_icd);
     pthread_cond_init(&c->ref_cond, NULL);
     pthread_mutex_init(&c->cli_mutex, NULL);

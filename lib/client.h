@@ -12,7 +12,7 @@
 #include "utarray.h"
 
 #define BPSP_CLIENT_BUFFER_SIZE 2
-#define CLIENT_ID_LEN 6
+#define BPSP_CLIENT_ID_LEN 6
 
 struct bpsp__subscriber {
     char* _id;             // need malloc; _id = client_id + '/' + topic => 'Sa123u/locationA/sensorA'
@@ -39,7 +39,7 @@ subscriber__hash* subscriber__new_hash_elt(char* key, bpsp__subscriber* sub);
 
 struct bpsp__client {
     // core
-    char _id[CLIENT_ID_LEN];
+    char _id[BPSP_CLIENT_ID_LEN + 1];
     bpsp__broker* broker;
     UT_array* subs;
     bpsp__connection* conn;

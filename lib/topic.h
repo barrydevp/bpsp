@@ -48,7 +48,7 @@ struct bpsp__topic_tree {
 };
 
 // testing
-status__err topic__extract_token(char* topic, uint16_t* n_tok, char** first_tok);
+status__err topic__extract_token(char* topic, int* n_tok, char** first_tok);
 
 void topic__free_hash_node_elt(topic__hash_node* hsh);
 status__err topic__init_node(topic__node* node);
@@ -61,7 +61,7 @@ void topic__dtor_tree(bpsp__topic_tree* tree);
 void topic__free_tree(bpsp__topic_tree* tree);
 status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub);
 status__err topic__del_subscriber(bpsp__subscriber* sub);
-UT_array* topic__find_subscribers(bpsp__topic_tree* tree, char* topic);
+UT_array* topic__tree_find_subscribers(bpsp__topic_tree* tree, char* topic, uint8_t lock);
 
 void topic__print_tree(bpsp__topic_tree* tree);
 

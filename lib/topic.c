@@ -100,11 +100,18 @@ status__err topic__node_add_sub(topic__node* node, bpsp__subscriber* sub) {
 
     sub->node = node;
     /* utarray_push_back(node->subs, sub); */
-    subscriber__hash* hsh_sub = subscriber__new_hash_elt(sub->_id, sub);
+    subscriber__hash* hsh_sub = NULL;
 
-    ASSERT_ARG(hsh_sub, BPSP_NO_MEMORY);
+    HASH_FIND_STR(node->subs, sub->_id, hsh_sub);
 
-    HASH_ADD_STR(node->subs, key, hsh_sub);
+    if (1 || !hsh_sub) {
+        subscriber__hash* hsh_sub = subscriber__new_hash_elt(sub->_id, sub);
+        ASSERT_ARG(hsh_sub, BPSP_NO_MEMORY);
+
+        HASH_ADD_STR(node->subs, key, hsh_sub);
+    } else {
+        return BPSP_TREE_DUP_SUBSCRIBER;
+    }
 
     /* bpsp__subscriber* _sub = (bpsp__subscriber*)utarray_back(node->subs); */
 
@@ -175,7 +182,7 @@ bpsp__topic_tree* topic__new_tree() {
     return tree;
 }
 
-status__err topic__extract_token(char* topic, uint16_t* n_tok, char** first_tok) {
+status__err topic__extract_token(char* topic, int* n_tok, char** first_tok) {
     // invalid topic, must be at least one character
     ASSERT_ARG(strlen(topic), BPSP_INVALID_TOPIC);
 
@@ -224,8 +231,8 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
     status__err s = BPSP_OK;
 
     char* first_tok;
-    uint16_t n_tok = 0;
-    char* topic = sub->_id + sizeof(sub->client->_id) + 1;
+    int n_tok = 0;
+    char* topic = sub->_id + strlen(sub->client->_id) + 1;
     s = topic__extract_token(topic, &n_tok, &first_tok);
 
     ASSERT_BPSP_OK(s);
@@ -370,4 +377,117 @@ void topic__print_tree(bpsp__topic_tree* tree) {
     } else {
         printf("NULL\n");
     }
+}
+
+int topic__node_subs_len(topic__node* node) {
+    ASSERT_ARG(node, 0);
+
+    return HASH_COUNT(node->subs);
+}
+
+status__err hash__subscriber_copy_to_array(UT_array* arr, subscriber__hash* subs) {
+    ASSERT_ARG(arr, BPSP_INVALID_ARG);
+
+    ASSERT_ARG(subs, BPSP_OK);
+
+    subscriber__hash *_sub, *tmp;
+    HASH_ITER(hh, subs, _sub, tmp) {
+        //
+
+        utarray_push_back(arr, _sub);
+    }
+
+    return BPSP_OK;
+}
+
+UT_array* topic__node_find_subscribers(topic__node* node, char* first_tok, int n_tok) {
+    ASSERT_ARG(node, NULL);
+    ASSERT_ARG(first_tok, NULL);
+    ASSERT_ARG(n_tok >= 0, NULL);
+
+    UT_array* subs = NULL;
+    utarray_new(subs, &bpsp__subscriber_icd);
+
+    if (n_tok == 0) {
+        // n_tok == 0 so we has match all token, return all subscribers of this node.
+
+        hash__subscriber_copy_to_array(subs, node->subs);
+
+        return subs;
+    }
+
+    char* cur_tok = first_tok;
+    topic__node* cur_node = node;
+    topic__hash_node* hsh_node = NULL;
+
+    status__err s = BPSP_OK;
+
+    while (s == BPSP_OK && cur_node && n_tok > 0) {
+        // check multi-level node first
+        if (topic__node_subs_len(cur_node->ml_node)) {
+            s = hash__subscriber_copy_to_array(subs, cur_node->ml_node->subs);
+            IFN_OK(s) {
+                log__warn("Cannot convert subscriber__hash of multi-level node to array");
+                break;
+            }
+        }
+
+        // get node in hash node if match, but no check or do smthing else
+        HASH_FIND_STR(cur_node->nodes, cur_tok, hsh_node);
+
+        cur_tok = topic__next_token(cur_tok);
+        n_tok--;
+
+        // find and add all subscriber from single-level node
+        if (cur_node->sl_node) {
+            UT_array* tmp_subs = topic__node_find_subscribers(cur_node->sl_node, cur_tok, n_tok);
+            if (tmp_subs) {
+                utarray_concat(subs, tmp_subs);
+                utarray_free(tmp_subs);
+            }
+        }
+
+        // after find in single-level node, we get back to operate on last found hash node
+        if (!hsh_node) {
+            // we not found node hash match the curent token, just break and end up finding
+            cur_node = NULL;
+            break;
+        } else {
+            // if we found, we dig into next level
+            cur_node = hsh_node->node;
+        }
+    }
+
+    // end up match all token, if cur_node != NULL, so this cur_node is the node which match the topic
+    // put all subs of it into result
+    if (cur_node && cur_node->subs) {
+        hash__subscriber_copy_to_array(subs, cur_node->subs);
+    }
+
+    return subs;
+}
+
+UT_array* topic__tree_find_subscribers(bpsp__topic_tree* tree, char* topic, uint8_t lock) {
+    ASSERT_ARG(tree, NULL);
+    ASSERT_ARG(topic, NULL);
+
+    /* utarray_new(subs, &bpsp__subscriber_icd); */
+
+    char* first_tok;
+    int n_tok = 0;
+    status__err s = topic__extract_token(topic, &n_tok, &first_tok);
+
+    if (lock) {
+        pthread_mutex_lock(&tree->tree_mutex);
+    }
+
+    UT_array* subs = topic__node_find_subscribers(&tree->root, first_tok, n_tok);
+
+    if (lock) {
+        pthread_mutex_unlock(&tree->tree_mutex);
+    }
+
+    mem__free(first_tok);
+
+    return subs;
 }

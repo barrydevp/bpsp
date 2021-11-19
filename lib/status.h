@@ -59,9 +59,9 @@ typedef enum {
                                ///  instance passing NULL to an API that does not
                                ///  accept this value.
     BPSP_NOT_COMPLETED_FRAME,  ///< The frame is not completed to operate on
-    BPSP_INVALID_SUBSCRIBER,   ///< The call to a subscription function fails because
-                               ///  the subscription has previously been closed.
-    BPSP_INVALID_VAR_HEADERS,      ///< Invalid variable headers.
+    BPSP_INVALID_SUBSCRIBER,   ///< Invalid subsciber
+    BPSP_TREE_DUP_SUBSCRIBER,  ///< Found duplicate subscriber in node_tree
+    BPSP_INVALID_VAR_HEADERS,  ///< Invalid variable headers.
 
     BPSP_ILLEGAL_STATE,  ///< An unexpected state, for instance calling
                          ///  #natsSubscription_NextMsg() on an asynchronous

@@ -26,6 +26,7 @@ static const char* err_text[] = {
     "Invalid Argument",
     "Not completed frame",
     "Invalid Subscriber",
+    "Duplicate Subscriber in Node Tree",
     "Invalid Variable Headers",
 
     "Illegal State",
