@@ -9,10 +9,14 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
 # TEST SUITE
-add_executable(test_frame test_frame.c)
-target_link_libraries(test_frame bpsp)
-add_test(frame test_frame)
+add_executable(frame_test frame_test.c)
+target_link_libraries(frame_test bpsp)
+add_test(frame frame_test)
 
-add_executable(test_topic test_topic.c)
-target_link_libraries(test_topic bpsp)
-add_test(topic test_topic)
+add_executable(topic_test topic_test.c)
+target_link_libraries(topic_test bpsp)
+add_test(topic topic_test)
+
+add_executable(client_test client_test.c)
+target_link_libraries(client_test bpsp)
+add_test(client client_test)

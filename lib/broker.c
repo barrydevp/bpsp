@@ -57,12 +57,6 @@ bpsp__broker* broker__new(const char* host, uint16_t port) {
         goto RET_ERROR;
     }
 
-    /*     if (pthread_mutex_init(&((broker->topic_tree).tree_mutex), NULL)) { */
-    /*         log__error("Broker cannot init `topic_tree.tree_mutext`"); */
-    /*  */
-    /*         goto RET_ERROR; */
-    /*     } */
-
     utarray_new(broker->clients, &bpsp__client_icd);
 
     bpsp__topic_tree* tree = topic__new_tree();

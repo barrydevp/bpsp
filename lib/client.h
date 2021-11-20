@@ -72,8 +72,8 @@ status__err client__recv(bpsp__client* client);
 status__err client__send(bpsp__client* client);
 status__err client__read(bpsp__client* client);
 status__err client__write(bpsp__client* client, bpsp__frame* frame);
-status__err client_sub(bpsp__client* client, char* topic, uint8_t lock);
-status__err client_unsub(bpsp__client* client, char* topic, uint8_t lock);
+status__err client__sub(bpsp__client* client, char* topic, uint8_t lock);
+status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock);
 
 static UT_icd bpsp__client_icd = {sizeof(bpsp__client), NULL, &client__copy, &client__dtor};
 static UT_icd bpsp__subscriber_icd = {sizeof(bpsp__subscriber), NULL, &subscriber__copy, &subscriber__dtor};

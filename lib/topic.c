@@ -230,15 +230,16 @@ status__err topic__extract_token(char* topic, int* n_tok, char** first_tok) {
     ASSERT_ARG(*topic != '/' && *(topic + strlen(topic) - 1) != '/', BPSP_INVALID_TOPIC);
 
     char* _topic = mem__strdup(topic);
+    char* saveptr = NULL;
 
-    char* tok = strtok(_topic, "/");
+    char* tok = strtok_r(_topic, "/", &saveptr);
     *first_tok = tok;
     *n_tok = 0;
     char* next_tok;
 
     while (tok != NULL) {
         *n_tok += 1;
-        next_tok = strtok(NULL, "/");
+        next_tok = strtok_r(NULL, "/", &saveptr);
         // invalid multilevel topic, must have at most one '*' char and occur at the end of topic
         if (*tok == '*' && strlen(tok) == 1 && next_tok) {
             goto RET_ERROR;
@@ -287,7 +288,8 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
     ASSERT_BPSP_OK(s);
 
     /* pthread_mutex_lock(&tree->mutex); */
-    pthread_rwlock_wrlock(&tree->rw_lock);
+    int ok = pthread_rwlock_wrlock(&tree->rw_lock);
+    printf("%s, n_tok %d\n", topic, n_tok);
 
     topic__node* cur_node = &tree->root;
 
@@ -365,7 +367,8 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
 RET_ERROR:
     mem__free(first_tok);
 
-    pthread_mutex_unlock(&tree->mutex);
+    /* pthread_mutex_unlock(&tree->mutex); */
+    pthread_rwlock_unlock(&tree->rw_lock);
 
     return s;
 }

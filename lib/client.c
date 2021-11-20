@@ -404,7 +404,7 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
     return s;
 }
 
-status__err client_sub(bpsp__client* client, char* topic, uint8_t lock) {
+status__err client__sub(bpsp__client* client, char* topic, uint8_t lock) {
     ASSERT_ARG(client, BPSP_INVALID_ARG);
     ASSERT_ARG(topic, BPSP_INVALID_TOPIC);
     ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG);
@@ -437,7 +437,7 @@ status__err client_sub(bpsp__client* client, char* topic, uint8_t lock) {
     return s;
 }
 
-status__err client_unsub(bpsp__client* client, char* topic, uint8_t lock) {
+status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
     ASSERT_ARG(client, BPSP_INVALID_ARG);
     ASSERT_ARG(topic, BPSP_INVALID_TOPIC);
     ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG);
