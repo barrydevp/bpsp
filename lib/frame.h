@@ -83,7 +83,9 @@ status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__ui
 status__err frame__is_completed(bpsp__frame* frame);
 status__err frame__build(bpsp__frame* frame);
 status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build);
+bpsp__frame* frame__dup(bpsp__frame* src, uint8_t build);
 void frame__print(bpsp__frame* frame);
+status__err frame__is_completed(bpsp__frame* frame);
 
 /** read **/
 status__err frame__recv(bpsp__connection* conn, bpsp__frame* frame);
@@ -93,7 +95,7 @@ status__err frame__send(bpsp__connection* conn, bpsp__frame* frame);
 
 /** frame op **/
 const char* frame__get_op_text(bpsp__opcode op);
-status__err frame__INFO(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
+status__err frame__INFO(bpsp__frame* frame, bpsp__broker* broker);
 status__err frame__CONNECT(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
 status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
                        uint16_t n_headers, bpsp__byte* msg, uint32_t size);
@@ -103,7 +105,7 @@ status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag);
 status__err frame__MSG(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
                        uint16_t n_headers, bpsp__byte* msg, uint32_t size);
 status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, bpsp__byte* msg, uint32_t size);
-status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, bpsp__byte* err, uint32_t size);
+status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, status__err s_err, char* msg);
 
 /** test **/
 status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size);

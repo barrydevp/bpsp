@@ -130,7 +130,7 @@ void client__init(void* elt) {
     rand_str(c->_id, BPSP_CLIENT_ID_LEN);
     /* utarray_new(c->subs, &bpsp__subscriber_icd); */
     pthread_cond_init(&c->ref_cond, NULL);
-    pthread_mutex_init(&c->cli_mutex, NULL);
+    pthread_mutex_init(&c->mutex, NULL);
     pthread_rwlock_init(&c->rw_lock, NULL);
     c->in_frame = frame__new();
     assert(c->in_frame);
@@ -179,19 +179,29 @@ void client__copy(void* _dst, const void* _src) {
     }
 }
 
-void client__unsub_all(bpsp__client* client) {
+void client__unsub_all(bpsp__client* client, uint8_t lock) {
     ASSERT_ARG(client, __EMPTY__);
     ASSERT_ARG(client->broker, __EMPTY__);
 
-    pthread_mutex_lock(&(client->broker->topic_tree->mutex));
+    if (lock) {
+        pthread_mutex_lock(&client->mutex);
+        // grab tree lock for batch del_subscriber
+        pthread_rwlock_wrlock(&client->broker->topic_tree->rw_lock);
+    }
+
     subscriber__hash *_sub, *tmp;
     HASH_ITER(hh, client->subs, _sub, tmp) {
         HASH_DEL(client->subs, _sub);  // delete it (users advances to next)
         topic__del_subscriber(client->broker->topic_tree, _sub->sub, 0);
-        subscriber__free(_sub->sub);
         subscriber__free_hash_elt(_sub);  // free it
+        subscriber__free(_sub->sub);
     }
-    pthread_mutex_lock(&(client->broker->topic_tree->mutex));
+
+    if (lock) {
+        // grab tree lock for batch del_subscriber
+        pthread_rwlock_unlock(&client->broker->topic_tree->rw_lock);
+        pthread_mutex_unlock(&client->mutex);
+    }
 
     HASH_CLEAR(hh, client->subs);
 }
@@ -205,6 +215,7 @@ void client__dtor(void* _elt) {
 
     // TODO: remove sub from topic_tree(prune if need), and free subs array
     net__free(client->conn);
+    client->conn = NULL;
 
     /* if (elt->subs) { */
     /*     utarray_free(elt->subs); */
@@ -229,7 +240,7 @@ void client__dtor(void* _elt) {
     }
 
     pthread_cond_destroy(&client->ref_cond);
-    pthread_mutex_destroy(&client->cli_mutex);
+    pthread_mutex_destroy(&client->mutex);
     pthread_rwlock_destroy(&client->rw_lock);
 }
 
@@ -253,82 +264,65 @@ status__err client__close(bpsp__client* client) {
     return s;
 }
 
+uint8_t client__is_close(bpsp__client* client) {
+    uint8_t ret = 0;
+
+    if (!client || client->is_close || !client->conn) {
+        ret = 1;
+    }
+
+    return ret;
+}
+
 status__err client__destroy(bpsp__client* client) {
     ASSERT_ARG(client, BPSP_OK);
 
     status__err s = BPSP_OK;
 
+    client__unsub_all(client, 1);
+
+    // TODO: Should we use mutex or rwlock to boostup performance?
     pthread_rwlock_wrlock(&client->rw_lock);
-    /* pthread_mutex_lock(&client->cli_mutex); */
-    /* while (client->ref_count > 0) { */
-    /*     pthread_cond_wait(&client->ref_cond, &client->cli_mutex); */
-    /* } */
+    /* pthread_mutex_lock(&client->mutex); */
 
     s = net__close(client->conn);
 
-    /* pthread_mutex_unlock(&client->cli_mutex); */
+    client->is_close = 1;
+
+    /* pthread_mutex_lock(&client->mutex); */
     pthread_rwlock_unlock(&client->rw_lock);
 
     ASSERT_BPSP_OK(s);
 
+    // FIXME: should free in broker after un link from it ?
     client__free(client);
 
     return s;
-}
-
-void client__inc_ref(bpsp__client* client, uint8_t lock) {
-    if (lock) {
-        pthread_mutex_lock(&client->cli_mutex);
-    }
-    client->ref_count += 1;
-
-    if (lock) {
-        pthread_mutex_unlock(&client->cli_mutex);
-    }
-}
-
-void client__dec_ref(bpsp__client* client, uint8_t lock) {
-    if (lock) {
-        pthread_mutex_lock(&client->cli_mutex);
-    }
-    client->ref_count -= 1;
-
-    if (client->ref_count == 0) {
-        pthread_cond_signal(&client->ref_cond);
-    }
-    if (lock) {
-        pthread_mutex_unlock(&client->cli_mutex);
-    }
 }
 
 status__err client__recv(bpsp__client* client) {
     ASSERT_ARG(client, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
-    pthread_mutex_lock(&client->cli_mutex);
 
-    client__inc_ref(client, 0);
+    pthread_rwlock_rdlock(&client->rw_lock);
 
-    if (!client->conn) {
+    if (client__is_close(client)) {
         // client has close
-        client__dec_ref(client, 0);
-        pthread_mutex_unlock(&client->cli_mutex);
 
+        pthread_rwlock_unlock(&client->rw_lock);
         return BPSP_CONNECTION_CLOSED;
     }
 
-    pthread_mutex_unlock(&client->cli_mutex);
+    pthread_rwlock_unlock(&client->rw_lock);
+    /* pthread_mutex_unlock(&client->mutex); */
 
+    // TODO: grab lock for in_frame and conn.read
     s = frame__recv(client->conn, client->in_frame);
 
-    client__dec_ref(client, 1);
+    /* pthread_mutex_unlock(&client->cli_mutex); */
 
     return s;
-}
-
-uint8_t client__is_close(bpsp__client* client) {
-    //
-    return !client || !client->conn;
 }
 
 status__err client__send(bpsp__client* client) {
@@ -337,27 +331,23 @@ status__err client__send(bpsp__client* client) {
     status__err s = BPSP_OK;
 
     pthread_rwlock_rdlock(&client->rw_lock);
-    /*     pthread_mutex_lock(&client->cli_mutex); */
-    /*     client__inc_ref(client, 0); */
 
     if (client__is_close(client)) {
         // client has close
-        /* client__dec_ref(client, 0); */
-        /* pthread_mutex_unlock(&client->cli_mutex); */
-        pthread_rwlock_wrlock(&client->rw_lock);
 
+        pthread_rwlock_unlock(&client->rw_lock);
         return BPSP_CONNECTION_CLOSED;
     }
 
-    /*     pthread_mutex_unlock(&client->cli_mutex); */
+    pthread_rwlock_unlock(&client->rw_lock);
 
-    pthread_mutex_lock(&client->cli_mutex);
+    // grab lock to write out_frame and net.write
+    // TODO: should we use separated mutex?
+    pthread_mutex_lock(&client->mutex);
 
     s = frame__send(client->conn, client->out_frame);
 
-    pthread_mutex_unlock(&client->cli_mutex);
-
-    /*     client__dec_ref(client, 1); */
+    pthread_mutex_unlock(&client->mutex);
 
     return s;
 }
@@ -373,33 +363,31 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
     status__err s = BPSP_OK;
 
     pthread_rwlock_rdlock(&client->rw_lock);
-    /*     pthread_mutex_lock(&client->cli_mutex); */
-    /*     client__inc_ref(client, 0); */
 
     if (client__is_close(client)) {
         // client has close
-        /* client__dec_ref(client, 0); */
-        /* pthread_mutex_unlock(&client->cli_mutex); */
-        pthread_rwlock_wrlock(&client->rw_lock);
 
+        pthread_rwlock_unlock(&client->rw_lock);
         return BPSP_CONNECTION_CLOSED;
     }
 
-    pthread_mutex_unlock(&client->cli_mutex);
+    pthread_rwlock_unlock(&client->rw_lock);
+
+    // grab lock to write out_frame and net.write
+    // TODO: should we use separated mutex?
+    pthread_mutex_lock(&client->mutex);
 
     s = frame__copy(client->out_frame, frame, 1);
 
     IFN_OK(s) {
-        pthread_mutex_unlock(&client->cli_mutex);
+        pthread_mutex_unlock(&client->mutex);
 
         return s;
     }
 
     s = frame__send(client->conn, client->out_frame);
 
-    pthread_mutex_unlock(&client->cli_mutex);
-
-    /*     client__dec_ref(client, 1); */
+    pthread_mutex_unlock(&client->mutex);
 
     return s;
 }
@@ -412,9 +400,10 @@ status__err client__sub(bpsp__client* client, char* topic, uint8_t lock) {
     status__err s = BPSP_OK;
 
     bpsp__subscriber* sub = NULL;
-    // locking client for modify the shared subs hash table, necessary? we only use one reader at a time, it wasted?
+    // locking client for modify the shared subs hash table, necessary ?
+    // we only use one reader at a time, does it wasted ?
     if (lock) {
-        pthread_mutex_lock(&client->cli_mutex);
+        pthread_mutex_lock(&client->mutex);
     }
 
     subscriber__hash* hsh_sub = NULL;
@@ -427,7 +416,7 @@ status__err client__sub(bpsp__client* client, char* topic, uint8_t lock) {
     }
 
     if (lock) {
-        pthread_mutex_unlock(&client->cli_mutex);
+        pthread_mutex_unlock(&client->mutex);
     }
 
     if (sub) {
@@ -447,7 +436,7 @@ status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
     bpsp__subscriber* sub = NULL;
     // locking client for modify the shared subs hash table, necessary? we only use one reader at a time, it wasted?
     if (lock) {
-        pthread_mutex_lock(&client->cli_mutex);
+        pthread_mutex_lock(&client->mutex);
     }
 
     subscriber__hash* hsh_sub = NULL;
@@ -460,11 +449,11 @@ status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
     }
 
     if (lock) {
-        pthread_mutex_unlock(&client->cli_mutex);
+        pthread_mutex_unlock(&client->mutex);
     }
 
     if (sub) {
-        s = topic__del_subscriber(client->broker->topic_tree, sub, 1);
+        s = topic__del_subscriber(client->broker->topic_tree, sub, lock);
     }
 
     subscriber__free(sub);

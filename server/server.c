@@ -8,10 +8,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "bpsp.h"
 #include "broker.h"
 #include "client.h"
 #include "log.h"
 #include "status.h"
+#include "handle.h"
 
 #define DEFAULT_PORT 29010
 /* #define DEFAULT_ADDR "127.0.0.1" */
@@ -25,40 +27,6 @@ int pexit(const char* str) {
     exit(1);
 }
 
-void* server__handle_client(void* arg) {
-    bpsp__client* client = (bpsp__client*)arg;
-
-    pthread_t tid = pthread_self();
-    pthread_detach(tid);
-
-    status__err s = BPSP_OK;
-
-    bpsp__frame* in = frame__new();
-
-    while (s == BPSP_OK) {
-        s = frame__recv(client->conn, in);
-
-        IFN_OK(s) {
-            perror("frame__read()");
-            break;
-        }
-
-        /* frame__print(in); */
-
-        s = frame__send(client->conn, in);
-
-        IFN_OK(s) {
-            perror("frame__write()");
-            break;
-        }
-    }
-
-    frame__free(in);
-
-    client__free(client);
-
-    return NULL;
-}
 
 void server__loop() {
     if (!broker) {

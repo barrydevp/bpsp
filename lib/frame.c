@@ -297,6 +297,9 @@ status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__u
 }
 
 status__err frame__validate_opcode(bpsp__uint8 opcode) {
+    if (opcode <= 0) {
+        return BPSP_INVALID_OPCODE;
+    }
     ASSERT_ARG(opcode > 0, BPSP_INVALID_OPCODE);
 
     return BPSP_OK;
@@ -350,11 +353,13 @@ status__err frame__malloc_payload(bpsp__frame* frame, bpsp__uint32 data_size) {
     }
 
     if (frame->payload_size) {
-        bpsp__byte* old_payload = frame->payload;
-        frame->payload = (bpsp__byte*)mem__realloc(frame->payload, sizeof(bpsp__byte) * data_size);
+        if (frame->payload_size != data_size) {
+            bpsp__byte* old_payload = frame->payload;
+            frame->payload = (bpsp__byte*)mem__realloc(frame->payload, sizeof(bpsp__byte) * data_size);
 
-        if (!frame->payload) {
-            mem__free(old_payload);
+            if (!frame->payload) {
+                mem__free(old_payload);
+            }
         }
     } else {
         frame->payload = (bpsp__byte*)mem__malloc(sizeof(bpsp__byte) * data_size);
@@ -400,7 +405,7 @@ status__err frame__validate_var_headers(bpsp__frame* frame) {
     ASSERT_ARG(frame, BPSP_INVALID_ARG);
 
     // should we?
-    ASSERT_ARG((uint32_t)frame->vars_size < 65536, BPSP_INVALID_OPCODE);
+    ASSERT_ARG((uint32_t)frame->vars_size < 65536, BPSP_MAX_VAR_HEADERS);
 
     return BPSP_OK;
 }
@@ -457,17 +462,34 @@ status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build) {
     bpsp__var_header *var_header, *tmp;
     HASH_ITER(hh, src->var_headers, var_header, tmp) {
         //
-        frame__set_var_header(dst, var_header->key, var_header->value);
+        s = frame__set_var_header(dst, var_header->key, var_header->value);
+        ASSERT_BPSP_OK(s);
     }
 
     // copy data
-    frame__put_payload(dst, src->payload, src->payload_size, 0);
+    s = frame__put_payload(dst, src->payload, src->payload_size, 0);
+    ASSERT_BPSP_OK(s);
 
     if (build) {
-        frame__build(src);
+        s = frame__build(dst);
     }
 
     return s;
+}
+
+bpsp__frame* frame__dup(bpsp__frame* src, uint8_t build) {
+    ASSERT_ARG(src, NULL);
+
+    bpsp__frame* dst = frame__new();
+
+    ASSERT_ARG(dst, NULL);
+
+    IFN_OK(frame__copy(dst, src, build)) {
+        //
+        frame__free(dst);
+    }
+
+    return dst;
 }
 
 void frame__print(bpsp__frame* frame) {
@@ -477,21 +499,18 @@ void frame__print(bpsp__frame* frame) {
         printf("(%u, %s, " BYTE_TO_BINARY_PATTERN ")\n", frame->vars_size, OP_TEXT(frame->opcode),
                BYTE_TO_BINARY(frame->flag));
         printf("%u\n", frame->data_size);
-        printf("\n");
 
         bpsp__var_header *var_header, *tmp;
         HASH_ITER(hh, frame->var_headers, var_header, tmp) {
             printf("\"%s\"\"%s\";\n", var_header->key, var_header->value);
         }
 
-        printf("\n");
+        printf("######\n");
         if (frame->data_size > 0) {
             char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
             mem__memcpy(payload, frame->payload, frame->data_size);
             printf("%s\n", payload);
             mem__free(payload);
-        } else {
-            printf("\n");
         }
 
     } else {

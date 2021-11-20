@@ -45,11 +45,12 @@ struct bpsp__client {
     /* UT_array* subs; */
     subscriber__hash* subs;
     bpsp__connection* conn;
+    uint8_t is_close;
 
     // synchonization
     bpsp__uint16 ref_count;
     pthread_cond_t ref_cond;
-    pthread_mutex_t cli_mutex;
+    pthread_mutex_t mutex;
     pthread_rwlock_t rw_lock;  // multiple thread may write same time but we assume only one thread read at a time,
                                 // so we use this mutex to lock write only
 
@@ -74,6 +75,7 @@ status__err client__read(bpsp__client* client);
 status__err client__write(bpsp__client* client, bpsp__frame* frame);
 status__err client__sub(bpsp__client* client, char* topic, uint8_t lock);
 status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock);
+void client__unsub_all(bpsp__client* client, uint8_t lock);
 
 static UT_icd bpsp__client_icd = {sizeof(bpsp__client), NULL, &client__copy, &client__dtor};
 static UT_icd bpsp__subscriber_icd = {sizeof(bpsp__subscriber), NULL, &subscriber__copy, &subscriber__dtor};

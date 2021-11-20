@@ -109,10 +109,8 @@ void __loop(bpsp__connection* conn) {
 
     frame__empty(out);
 
-    const char* msg = "hello from server";
-    const char* topic = "locationA/sensorA";
-    frame__INFO(out, (bpsp__byte*)msg, strlen(msg));
-    s = echo(conn, out);
+    char* msg = "hello from server";
+    char* topic = "locationA/sensorA";
     frame__CONNECT(out, (bpsp__byte*)msg, strlen(msg));
     s = echo(conn, out);
     frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
@@ -123,7 +121,9 @@ void __loop(bpsp__connection* conn) {
     s = echo(conn, out);
     frame__OK(out, 0, (bpsp__byte*)msg, strlen(msg));
     s = echo(conn, out);
-    frame__ERR(out, 0, (bpsp__byte*)msg, strlen(msg));
+    frame__ERR(out, 0, BPSP_TIMEOUT, msg);
+    s = echo(conn, out);
+    frame__ERR(out, 0, BPSP_DRAINING, NULL);
     s = echo(conn, out);
 
     /* int count = 0; */

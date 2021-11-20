@@ -10,20 +10,36 @@
 #include "topic.h"
 #include "utarray.h"
 
-struct bpsp__broker {
-    bpsp__connection* listener;
+#define BROKER_VERION_LEN 12  // major(3).minor(3).patch(3) eg: 1.0.0
+#define BROKER_MAX_NAME_LEN 256
+#define BROKER_DEFAULT_VERION "1.0.0"
+#define BROKER_DEFAULT_NAME "BPSP - Basic Publish Subscribe Broker"
 
-    pthread_mutex_t clients_mutex;
-    UT_array* clients;
+struct broker__info {
+    char* version;
+    char* name;
+};
+
+struct bpsp__broker {
+    broker__info* info;
+    bpsp__connection* listener;
+    uint8_t is_close;
+
+    pthread_mutex_t mutex;
+    pthread_rwlock_t cli_rw_lock;
+    bpsp__client* clients;
+    /* UT_array* clients; */
 
     bpsp__topic_tree* topic_tree;
 };
 
 bpsp__broker* broker__new(const char* host, uint16_t port);
+bpsp__broker* broker__new_with_info(const char* host, uint16_t port, broker__info* info);
 void broker__dtor(bpsp__broker* broker);
 void broker__free(bpsp__broker* broker);
 void broker__destroy(bpsp__broker* broker);
-status__err broker__close(bpsp__broker* broker);
+status__err broker__close(bpsp__broker* broker, uint8_t lock);
 bpsp__client* broker__accept(bpsp__broker* broker);
+status__err broker__destroy_client(bpsp__broker* broker, bpsp__client* client, uint8_t lock);
 
 #endif  // _BROKER_H_

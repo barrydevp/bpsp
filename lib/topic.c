@@ -175,7 +175,11 @@ topic__hash_node* topic__new_hash_node(char* token) {
 void topic__dtor_tree(bpsp__topic_tree* tree) {
     ASSERT_ARG(tree, __EMPTY__);
 
+    pthread_rwlock_wrlock(&tree->rw_lock);
+
     topic__dtor_node(&tree->root);
+
+    pthread_rwlock_unlock(&tree->rw_lock);
 
     pthread_mutex_destroy(&tree->mutex);
     pthread_rwlock_destroy(&tree->rw_lock);
@@ -419,13 +423,9 @@ status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub,
     char* tokens[n_tok];
     topic__token_to_array(tokens, first_tok, n_tok);
 
-    /* ASSERT_BPSP_OK(s); */
-
     if (lock) {
-        /* pthread_mutex_lock(&tree->mutex); */
         pthread_rwlock_wrlock(&tree->rw_lock);
     }
-    /* utarray_erase(node->subs, sub->idx_on_node, 1); */
     subscriber__hash* hsh = NULL;
     HASH_FIND_STR(node->subs, sub->_id, hsh);
 
@@ -437,7 +437,6 @@ status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub,
     }
 
     if (lock) {
-        /* pthread_mutex_unlock(&tree->mutex); */
         pthread_rwlock_unlock(&tree->rw_lock);
     }
 

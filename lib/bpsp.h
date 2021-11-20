@@ -2,6 +2,7 @@
 #define _BPSP_H_
 
 // broker.h
+typedef struct broker__info broker__info;
 typedef struct bpsp__broker bpsp__broker;
 
 // client.h
