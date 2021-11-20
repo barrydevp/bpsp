@@ -59,6 +59,12 @@ char* subscriber__gen_id(char* topic, bpsp__client* client) {
     return _id;
 }
 
+char* subscriber__get_topic(bpsp__subscriber* sub) {
+    ASSERT_ARG(sub, NULL);
+
+    return sub->_id + strlen(sub->client->_id) + 1;
+}
+
 bpsp__subscriber* subscriber__new(char* topic, bpsp__client* client, topic__node* node) {
     ASSERT_ARG(topic, NULL);
     ASSERT_ARG(client, NULL);

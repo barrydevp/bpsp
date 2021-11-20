@@ -36,6 +36,7 @@ void subscriber__dtor(void* _elt);
 void subscriber__free(bpsp__subscriber* sub);
 void subscriber__free_hash_elt(subscriber__hash* hsh);
 subscriber__hash* subscriber__new_hash_elt(char* key, bpsp__subscriber* sub);
+char* subscriber__get_topic(bpsp__subscriber* sub);
 
 struct bpsp__client {
     // core

@@ -27,6 +27,8 @@ typedef enum {
     OP_ERR,
 } bpsp__opcode;
 
+#define OP_TEXT(o) frame__get_op_text(o)
+
 typedef char** bpsp__var_header_pair;  // must be char[2]
 
 struct bpsp__var_header {
@@ -59,7 +61,6 @@ struct bpsp__frame {
     /** Misc **/
     /* struct bpsp__frame* next; */
     bpsp__uint8 _is_completed;
-
 };
 
 /** core **/
@@ -91,6 +92,7 @@ status__err frame__recv(bpsp__connection* conn, bpsp__frame* frame);
 status__err frame__send(bpsp__connection* conn, bpsp__frame* frame);
 
 /** frame op **/
+const char* frame__get_op_text(bpsp__opcode op);
 status__err frame__INFO(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
 status__err frame__CONNECT(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
 status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,

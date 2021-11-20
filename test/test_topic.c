@@ -38,25 +38,40 @@ int main() {
     /* free(first_tok); */
 
     s = topic__add_subscriber(&tree, sub);
-    subscriber__free(sub);
 
-    bpsp__subscriber* sub1 = subscriber__new("locationA/sensorA/uptime", client, NULL);
+    bpsp__client* client1 = client__new(NULL, NULL);
+    bpsp__subscriber* sub1 = subscriber__new("locationA/sensorA/uptime", client1, NULL);
     s = topic__add_subscriber(&tree, sub1);
-    bpsp__subscriber* sub2 = subscriber__new("locationA/sensorA/uptime", client, NULL);
+    bpsp__client* client2 = client__new(NULL, NULL);
+    bpsp__subscriber* sub2 = subscriber__new("locationA/sensorA/uptime", client2, NULL);
     s = topic__add_subscriber(&tree, sub2);
     /* subscriber__free(sub1); */
 
-    sub = subscriber__new("locationA/sensorA/downtime", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
-    subscriber__free(sub);
+    bpsp__subscriber* sub3 = subscriber__new("locationA/sensorA/downtime", client, NULL);
+    s = topic__add_subscriber(&tree, sub3);
 
-    sub = subscriber__new("locationA/sensorA/uptime", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    bpsp__subscriber* sub4 = subscriber__new("locationA/sensorA/uptime", client, NULL);
+    s = topic__add_subscriber(&tree, sub4);
+    topic__print_tree(&tree);
+    s = topic__del_subscriber(&tree, sub4, 1);
+    topic__print_tree(&tree);
     s = topic__del_subscriber(&tree, sub, 1);
+    topic__print_tree(&tree);
     s = topic__del_subscriber(&tree, sub, 1);
-    subscriber__free(sub);
+    topic__print_tree(&tree);
+    s = topic__del_subscriber(&tree, sub2, 1);
+    topic__print_tree(&tree);
+    s = topic__del_subscriber(&tree, sub3, 1);
+    topic__print_tree(&tree);
+    s = topic__del_subscriber(&tree, sub1, 1);
+    topic__print_tree(&tree);
+    s = topic__del_subscriber(&tree, sub3, 1);
+    topic__print_tree(&tree);
+    subscriber__free(sub4);
     subscriber__free(sub1);
     subscriber__free(sub2);
+    subscriber__free(sub3);
+    subscriber__free(sub);
 
     sub = subscriber__new("locationA/sensorA/+", client, NULL);
     s = topic__add_subscriber(&tree, sub);
@@ -86,7 +101,7 @@ int main() {
     s = topic__add_subscriber(&tree, sub);
     subscriber__free(sub);
 
-    topic__print_tree(ptree);
+    /* topic__print_tree(ptree); */
 
     topic__print_tree(&tree);
 
@@ -102,6 +117,8 @@ int main() {
     topic__free_tree(ptree);
 
     client__free(client);
+    client__free(client1);
+    client__free(client2);
 
     return 0;
 }

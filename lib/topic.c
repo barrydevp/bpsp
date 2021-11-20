@@ -10,12 +10,44 @@
 #include "utarray.h"
 #include "uthash.h"
 
+int topic__node_num_child_nodes(topic__node* node) {
+    ASSERT_ARG(node, 0);
+
+    int num = HASH_COUNT(node->nodes);
+
+    if (node->ml_node) {
+        num++;
+    }
+
+    if (node->sl_node) {
+        num++;
+    }
+
+    return num;
+}
+
+int topic__node_num_subs(topic__node* node) {
+    ASSERT_ARG(node, 0);
+
+    return HASH_COUNT(node->subs);
+}
+
+uint8_t topic__node_is_empty(topic__node* node) {
+    ASSERT_ARG(node, 1);
+
+    if (topic__node_num_subs(node) == 0 && topic__node_num_child_nodes(node) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
 void topic__free_hash_node_elt(topic__hash_node* hsh) {
     ASSERT_ARG(hsh, __EMPTY__);
 
-    if (hsh->node) {
-        topic__free_node(hsh->node);
-    }
+    /* if (hsh->node) { */
+    /*     topic__free_node(hsh->node); */
+    /* } */
 
     if (hsh->token) {
         mem__free(hsh->token);
@@ -29,10 +61,12 @@ void topic__dtor_node(topic__node* node) {
 
     if (node->ml_node) {
         topic__free_node(node->ml_node);
+        node->ml_node = NULL;
     }
 
     if (node->sl_node) {
         topic__free_node(node->sl_node);
+        node->sl_node = NULL;
     }
 
     /* if (node->subs) { */
@@ -52,8 +86,9 @@ void topic__dtor_node(topic__node* node) {
     if (node->nodes) {
         topic__hash_node *_node, *tmp;
         HASH_ITER(hh, node->nodes, _node, tmp) {
-            HASH_DEL(node->nodes, _node);     /* delete it (users advances to next) */
-            topic__free_hash_node_elt(_node); /* free it */
+            HASH_DEL(node->nodes, _node);  // delete it (users advances to next)
+            topic__free_node(_node->node);
+            topic__free_hash_node_elt(_node);  // free it
         }
 
         HASH_CLEAR(hh, node->nodes);
@@ -228,6 +263,15 @@ RET_ERROR:
 // carefully when using this function, you must check the total of retrive token
 char* topic__next_token(char* cur_tok) { return cur_tok + strlen(cur_tok) + 1; }
 
+void topic__token_to_array(char* arr[], char* first_tok, int n_tok) {
+    ASSERT_ARG(n_tok, __EMPTY__);
+    arr[0] = first_tok;
+    for (int i = 1; i < n_tok; i++) {
+        first_tok = topic__next_token(first_tok);
+        arr[i] = first_tok;
+    }
+}
+
 status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub) {
     ASSERT_ARG(tree, BPSP_INVALID_ARG);
     ASSERT_ARG(sub, BPSP_INVALID_ARG);
@@ -237,7 +281,7 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
 
     char* first_tok;
     int n_tok = 0;
-    char* topic = sub->_id + strlen(sub->client->_id) + 1;
+    char* topic = subscriber__get_topic(sub);
     s = topic__extract_token(topic, &n_tok, &first_tok);
 
     ASSERT_BPSP_OK(s);
@@ -326,18 +370,53 @@ RET_ERROR:
     return s;
 }
 
+void topic__tree_prune_node(bpsp__topic_tree* tree, topic__node* leaf_node, char* tokens[], int n_tok, uint8_t lock) {
+    topic__node* cur_node = leaf_node;
+    topic__node* to_del = NULL;
+
+    for (int i = n_tok - 1; i >= 0 && topic__node_is_empty(cur_node); i--) {
+        to_del = cur_node;
+        cur_node = cur_node->parent;
+
+        char* tok = tokens[i];
+        if (*tok == '*' && strlen(tok) == 1) {
+            cur_node->ml_node = NULL;
+        } else if (*tok == '+' && strlen(tok) == 1) {
+            cur_node->sl_node = NULL;
+        } else {
+            topic__hash_node* hsh_node = NULL;
+            HASH_FIND_STR(cur_node->nodes, tok, hsh_node);
+            if (hsh_node) {
+                HASH_DEL(cur_node->nodes, hsh_node);
+                topic__free_hash_node_elt(hsh_node);
+            } else {
+                log__warn("Unexpected prune node, cannot found node in parent hash node tbl.");
+            }
+        }
+
+        topic__free_node(to_del);
+    }
+}
+
 status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub, uint8_t lock) {
     status__err s = BPSP_OK;
 
-    if (!sub->node) {
-        return s;
-    }
+    ASSERT_ARG(sub->node, s);
 
     topic__node* node = sub->node;
     if (!sub->_id) {
         log__error("Illegal subscriber to delete");
         return BPSP_INVALID_SUBSCRIBER;
     }
+
+    char* first_tok;
+    int n_tok = 0;
+    char* topic = subscriber__get_topic(sub);
+    s = topic__extract_token(topic, &n_tok, &first_tok);
+    char* tokens[n_tok];
+    topic__token_to_array(tokens, first_tok, n_tok);
+
+    /* ASSERT_BPSP_OK(s); */
 
     if (lock) {
         /* pthread_mutex_lock(&tree->mutex); */
@@ -349,13 +428,17 @@ status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub,
 
     if (hsh) {
         HASH_DEL(node->subs, hsh);
+        sub->node = NULL;
         subscriber__free_hash_elt(hsh);
+        topic__tree_prune_node(tree, node, tokens, n_tok, 0);
     }
 
     if (lock) {
         /* pthread_mutex_unlock(&tree->mutex); */
         pthread_rwlock_unlock(&tree->rw_lock);
     }
+
+    mem__free(first_tok);
 
     return s;
 }
@@ -366,7 +449,7 @@ void print_node(topic__node* node, char* token, int deep) {
             printf("   │");
         }
         /* printf("─ %s (%d)\n", token, utarray_len(node->subs)); */
-        printf("─ %s (%d)\n", token, HASH_COUNT(node->subs));
+        printf("─ %s (%d)\n", token, topic__node_num_subs(node));
 
         if (node->ml_node) {
             print_node(node->ml_node, "*", deep + 1);
@@ -394,12 +477,6 @@ void topic__print_tree(bpsp__topic_tree* tree) {
         printf("NULL\n");
     }
     printf("\n");
-}
-
-int topic__node_subs_len(topic__node* node) {
-    ASSERT_ARG(node, 0);
-
-    return HASH_COUNT(node->subs);
 }
 
 status__err hash__subscriber_copy_to_array(UT_array* arr, subscriber__hash* subs) {
@@ -441,7 +518,7 @@ UT_array* topic__node_find_subscribers(topic__node* node, char* first_tok, int n
 
     while (s == BPSP_OK && cur_node && n_tok > 0) {
         // check multi-level node first
-        if (topic__node_subs_len(cur_node->ml_node)) {
+        if (topic__node_num_subs(cur_node->ml_node)) {
             s = hash__subscriber_copy_to_array(subs, cur_node->ml_node->subs);
             IFN_OK(s) {
                 log__warn("Cannot convert subscriber__hash of multi-level node to array");

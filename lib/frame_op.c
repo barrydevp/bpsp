@@ -3,6 +3,20 @@
 #include "log.h"
 #include "status.h"
 
+static const char* op_text[] = {
+    "NO OP",    // NOOP
+    "INFO",     // INFO
+    "CONNECT",  // CONNECT
+    "PUB",      // PUB
+    "SUB",      // SUB
+    "UNSUB",    // UNSUB
+    "MSG",      // MSG
+    "OK",       // OK
+    "ERR"       // ERR
+};
+
+const char* frame__get_op_text(bpsp__opcode op) { return op_text[(int)op]; }
+
 status__err frame__INFO(bpsp__frame* frame, bpsp__byte* info, uint32_t size) {
     status__err s = frame__empty(frame);
     ASSERT_BPSP_OK(s);

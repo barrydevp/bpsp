@@ -1,3 +1,5 @@
+#include "frame.h"
+
 #include <string.h>
 
 #include "client.h"
@@ -5,6 +7,7 @@
 #include "log.h"
 #include "mem.h"
 #include "status.h"
+#include "util.h"
 
 bpsp__var_header* var_header__new(char* key, char* value) {
     /* ASSERT_ARG(key, NULL); */
@@ -471,29 +474,28 @@ void frame__print(bpsp__frame* frame) {
     printf("[FRAME]\n");
 
     if (frame) {
-        printf("--Fixed Header--\n");
-        printf("|var size| |opcode| |flag|\n");
-        printf("|%u| |%u| |%u|\n", frame->vars_size, frame->opcode, frame->flag);
-        printf("|data size|\n");
-        printf("|%u|\n", frame->data_size);
+        printf("(%u, %s, " BYTE_TO_BINARY_PATTERN ")\n", frame->vars_size, OP_TEXT(frame->opcode),
+               BYTE_TO_BINARY(frame->flag));
+        printf("%u\n", frame->data_size);
+        printf("\n");
 
-        printf("--Var Headers--\n");
         bpsp__var_header *var_header, *tmp;
         HASH_ITER(hh, frame->var_headers, var_header, tmp) {
             printf("\"%s\"\"%s\";\n", var_header->key, var_header->value);
         }
 
-        printf("--Data Payload--\n");
+        printf("\n");
         if (frame->data_size > 0) {
             char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
             mem__memcpy(payload, frame->payload, frame->data_size);
             printf("%s\n", payload);
             mem__free(payload);
         } else {
-            printf("NULL\n");
+            printf("\n");
         }
 
     } else {
         printf("NULL\n");
     }
+    printf("\n");
 }
