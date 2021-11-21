@@ -103,8 +103,7 @@ status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
 status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers_rule,
                        uint16_t n_headers);
 status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag);
-status__err frame__MSG(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
-                       uint16_t n_headers, bpsp__byte* msg, uint32_t size);
+status__err frame__MSG(bpsp__frame* frame, bpsp__frame* src);
 status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, char* msg);
 status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, status__err s_err, char* msg);
 

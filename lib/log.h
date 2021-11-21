@@ -20,7 +20,7 @@ void _log__error(const char* fmt, ...);
 void _log__debug(const char* fmt, ...);
 void _log__warn(const char* fmt, ...);
 
-#define log__trace _log__print("Trace", "%s at: %s (in %s:%d)", strerror(errno), __FUNCTION__, __FILE__, __LINE__)
+#define log__stack _log__print("Stack", "%s at: %s (in %s:%d)", strerror(errno), __FUNCTION__, __FILE__, __LINE__)
 
 #define log__print(label, fmt, ...) _log__print(label, fmt, ##__VA_ARGS__)
 
@@ -30,11 +30,11 @@ void _log__warn(const char* fmt, ...);
 
 #define log__warn(fmt, ...)                  \
     _log__print("WARN", fmt, ##__VA_ARGS__); \
-    if (log__stack_trace) log__trace
+    if (log__stack_trace) log__stack
 
 #define log__error(fmt, ...)                  \
     _log__print("ERROR", fmt, ##__VA_ARGS__); \
-    if (log__stack_trace) log__trace
+    if (log__stack_trace) log__stack
 
 #define log__trace_in_op(op, fmt, ...) _log__print("TRACE", "<<- %-6s" fmt, OP_TEXT(op), ##__VA_ARGS__)
 

@@ -135,18 +135,11 @@ status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag) {
     return s;
 }
 
-status__err frame__MSG(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
-                       uint16_t n_headers, bpsp__byte* msg, uint32_t size) {
-    status__err s = frame__empty(frame);
+status__err frame__MSG(bpsp__frame* frame, bpsp__frame* src) {
+    status__err s = frame__copy(frame, src, 0);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_MSG, flag);
-    ASSERT_BPSP_OK(s);
-
-    s = frame__set_var_header(frame, "x-topic", topic);
-    ASSERT_BPSP_OK(s);
-
-    s = frame__put_payload(frame, msg, size, 0);
+    s = frame__set_opcode(frame, OP_MSG);
     ASSERT_BPSP_OK(s);
 
     s = frame__build(frame);

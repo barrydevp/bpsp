@@ -60,7 +60,7 @@ status__err topic__init_tree(bpsp__topic_tree* tree);
 bpsp__topic_tree* topic__new_tree();
 void topic__dtor_tree(bpsp__topic_tree* tree);
 void topic__free_tree(bpsp__topic_tree* tree);
-status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub);
+status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub, uint8_t lock);
 status__err topic__del_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub, uint8_t lock);
 UT_array* topic__tree_find_subscribers(bpsp__topic_tree* tree, char* topic, uint8_t lock);
 

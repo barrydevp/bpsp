@@ -16,6 +16,7 @@
 
 struct bpsp__subscriber {
     char* _id;             // need malloc; _id = client_id + '/' + topic => 'Sa123u/locationA/sensorA'
+    char* client_id;
     bpsp__client* client;  // reference
 
     topic__node* node;  // reference to node
@@ -37,6 +38,7 @@ void subscriber__free(bpsp__subscriber* sub);
 void subscriber__free_hash_elt(subscriber__hash* hsh);
 subscriber__hash* subscriber__new_hash_elt(char* key, bpsp__subscriber* sub);
 char* subscriber__get_topic(bpsp__subscriber* sub);
+char* subscriber__get_client_id(bpsp__subscriber* sub);
 
 struct bpsp__client {
     // core

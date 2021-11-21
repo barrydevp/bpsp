@@ -43,6 +43,13 @@ char* mem__strdup(const char* s) {
     return str;
 }
 
+char* mem__strndup(const char* s, size_t num) {
+    char* str;
+    str = strndup(s, num);
+
+    return str;
+}
+
 unsigned long mem__memory_used(void) { return memcount; }
 
 unsigned long mem__max_memory_used(void) { return max_memcount; }

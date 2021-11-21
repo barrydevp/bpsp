@@ -9,6 +9,7 @@
 #include "client.h"
 #include "log.h"
 #include "status.h"
+#include "utarray.h"
 #include "uthash.h"
 
 status__err handle__ECHO(bpsp__client* client) {
@@ -50,15 +51,45 @@ status__err handle__PUB(bpsp__client* client) {
 
     HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
 
-    ASSERT_ARG(topic_hdr, BPSP_INVALID_TOPIC);
+    if (topic_hdr) {
+        UT_array* subs = broker__find_subs(client->broker, topic_hdr->value, 1);
 
-    s = client__sub(client, topic_hdr->value, 1);
+        if (subs && utarray_len(subs)) {
+            bpsp__subscriber* p = (bpsp__subscriber*)utarray_front(subs);
 
-    ASSERT_BPSP_OK(s);
+            bpsp__frame* deliver_frame = frame__new();
 
-    topic__print_tree(client->broker->topic_tree);
+            s = frame__MSG(deliver_frame, in);
 
-    s = frame__OK(client->out_frame, 0, "SUB OK.");
+            IF_OK(s) {
+                for (; p != NULL; p = (bpsp__subscriber*)utarray_next(subs, p)) {
+                    printf("%s - %s", p->_id, p->client_id);
+                    s = broker__deliver_msg(client, p, deliver_frame);
+                    IFN_OK(s) {
+                        //
+                        break;
+                    }
+                }
+
+                frame__free(deliver_frame);
+            }
+        }
+
+        if (subs) {
+            utarray_free(subs);
+        }
+
+        IFN_OK(s) {
+            //
+            s = frame__ERR(client->out_frame, 0, s, "Deliver msg fail.");
+        }
+        else {
+            s = frame__OK(client->out_frame, 0, "PUB OK. Deliver to %d subscriber");
+        }
+
+    } else {
+        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+    }
 
     ASSERT_BPSP_OK(s);
 
@@ -96,7 +127,7 @@ status__err handle__SUB(bpsp__client* client) {
         s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
     }
 
-    topic__print_tree(client->broker->topic_tree);
+    /* topic__print_tree(client->broker->topic_tree); */
 
     ASSERT_BPSP_OK(s);
 
@@ -134,7 +165,7 @@ status__err handle__UNSUB(bpsp__client* client) {
         s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
     }
 
-    topic__print_tree(client->broker->topic_tree);
+    /* topic__print_tree(client->broker->topic_tree); */
 
     ASSERT_BPSP_OK(s);
 

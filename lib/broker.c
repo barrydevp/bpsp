@@ -208,6 +208,56 @@ RET_ERROR:
     return NULL;
 }
 
+status__err broker__deliver_msg(bpsp__client* source_client, bpsp__subscriber* sub, bpsp__frame* frame) {
+    ASSERT_ARG(source_client && source_client->broker, BPSP_INVALID_ARG);
+
+    bpsp__broker* broker = source_client->broker;
+    status__err s = BPSP_OK;
+
+    s = frame__set_var_header(frame, "x-topic", subscriber__get_topic(sub));
+    ASSERT_BPSP_OK(s);
+
+    pthread_rwlock_rdlock(&broker->cli_rw_lock);
+
+    bpsp__client* target_client = NULL;
+
+    char* client_id = subscriber__get_client_id(sub);
+
+    HASH_FIND_STR(broker->clients, client_id, target_client);
+
+    if (target_client) {
+        if (target_client == sub->client) {
+            char* source_ip = inet_ntoa(source_client->conn->addr->sin_addr);
+            char* source_addr = mem__malloc(sizeof(char) * (strlen(source_ip) + 10));
+            if (!source_addr) {
+                pthread_rwlock_unlock(&broker->cli_rw_lock);
+
+                return BPSP_NO_MEMORY;
+            }
+            sprintf(source_addr, "%s:%d", source_ip, ntohs(source_client->conn->addr->sin_port));
+            s = frame__set_var_header(frame, "x-from", source_addr);
+            mem__free(source_addr);
+
+            IFN_OK(s) {
+                pthread_rwlock_unlock(&broker->cli_rw_lock);
+                log__error("Cannot set source header to deliver_frame");
+
+                return s;
+            }
+
+            client__send(target_client, frame, 1);
+        } else {
+            log__error("Client pointer in subscriber does not match with result found from broker's client table.");
+        }
+    } else {
+        log__warn("Deliver msg to Client %s has been destroy.", client_id);
+    }
+
+    pthread_rwlock_unlock(&broker->cli_rw_lock);
+
+    return s;
+}
+
 status__err broker__destroy_client(bpsp__broker* broker, bpsp__client* client, uint8_t lock) {
     status__err s = BPSP_OK;
 
@@ -230,4 +280,26 @@ status__err broker__destroy_client(bpsp__broker* broker, bpsp__client* client, u
     client__destroy(client);
 
     return s;
+}
+
+status__err broker__add_sub(bpsp__broker* broker, bpsp__subscriber* sub, uint8_t lock) {
+    status__err s = BPSP_OK;
+
+    s = topic__add_subscriber(broker->topic_tree, sub, lock);
+
+    return s;
+}
+
+status__err broker__del_sub(bpsp__broker* broker, bpsp__subscriber* sub, uint8_t lock) {
+    status__err s = BPSP_OK;
+
+    s = topic__del_subscriber(broker->topic_tree, sub, lock);
+
+    return s;
+}
+
+UT_array* broker__find_subs(bpsp__broker* broker, char* topic, uint8_t lock) {
+    UT_array* subs = topic__tree_find_subscribers(broker->topic_tree, topic, lock);
+
+    return subs;
 }
