@@ -14,10 +14,10 @@
 status__err handle__ECHO(bpsp__client* client) {
     status__err s = BPSP_OK;
 
-    s = client__write(client, client->in_frame);
+    s = client__send(client, client->in_frame, 1);
 
     IFN_OK(s) {
-        perror("client__write()");
+        perror("client__send()");
         return s;
     }
 
@@ -34,7 +34,7 @@ status__err handle__CONNECT(bpsp__client* client) {
     s = client__send(client, client->out_frame, 1);
 
     IFN_OK(s) {
-        perror("client__write()");
+        perror("client__send()");
         return s;
     }
 
@@ -42,19 +42,6 @@ status__err handle__CONNECT(bpsp__client* client) {
 }
 
 status__err handle__PUB(bpsp__client* client) {
-    status__err s = BPSP_OK;
-
-    s = client__write(client, client->in_frame);
-
-    IFN_OK(s) {
-        perror("client__write()");
-        return s;
-    }
-
-    return s;
-}
-
-status__err handle__SUB(bpsp__client* client) {
     status__err s = BPSP_OK;
 
     bpsp__frame* in = client->in_frame;
@@ -78,7 +65,45 @@ status__err handle__SUB(bpsp__client* client) {
     s = client__send(client, client->out_frame, 1);
 
     IFN_OK(s) {
-        perror("client__write()");
+        perror("client__send()");
+        return s;
+    }
+
+    return s;
+}
+
+status__err handle__SUB(bpsp__client* client) {
+    status__err s = BPSP_OK;
+
+    bpsp__frame* in = client->in_frame;
+
+    bpsp__var_header* topic_hdr = NULL;
+
+    HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
+
+    if (topic_hdr) {
+        s = client__sub(client, topic_hdr->value, 1);
+
+        IFN_OK(s) {
+            //
+            s = frame__ERR(client->out_frame, 0, s, "Cannot add subsciber into Tree.");
+        }
+        else {
+            s = frame__OK(client->out_frame, 0, "SUB OK.");
+        }
+
+    } else {
+        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+    }
+
+    topic__print_tree(client->broker->topic_tree);
+
+    ASSERT_BPSP_OK(s);
+
+    s = client__send(client, client->out_frame, 1);
+
+    IFN_OK(s) {
+        perror("client__send()");
         return s;
     }
 
@@ -94,22 +119,29 @@ status__err handle__UNSUB(bpsp__client* client) {
 
     HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
 
-    ASSERT_ARG(topic_hdr, BPSP_INVALID_TOPIC);
+    if (topic_hdr) {
+        s = client__unsub(client, topic_hdr->value, 1);
 
-    s = client__unsub(client, topic_hdr->value, 1);
+        IFN_OK(s) {
+            //
+            s = frame__ERR(client->out_frame, 0, s, "Cannot remove subsciber from Tree.");
+        }
+        else {
+            s = frame__OK(client->out_frame, 0, "UNSUB OK.");
+        }
 
-    ASSERT_BPSP_OK(s);
+    } else {
+        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+    }
 
     topic__print_tree(client->broker->topic_tree);
-
-    s = frame__OK(client->out_frame, 0, "UNSUB OK.");
 
     ASSERT_BPSP_OK(s);
 
     s = client__send(client, client->out_frame, 1);
 
     IFN_OK(s) {
-        perror("client__write()");
+        perror("client__send()");
         return s;
     }
 
@@ -150,7 +182,7 @@ status__err handle__client_loop(bpsp__client* client) {
 
         IFN_OK(s) {
             perror("client__read()");
-            log__info("Client `%s` loop closing, by# %s", client->_id, ERR_TEXT(s));
+            log__info("Client `%s` loop closing, (%s)", client->_id, ERR_TEXT(s));
             return s;
         }
 
@@ -158,7 +190,7 @@ status__err handle__client_loop(bpsp__client* client) {
 
         IFN_OK(s) {
             perror("hanle()");
-            log__info("Client `%s` loop closing, by# %s", client->_id, ERR_TEXT(s));
+            log__info("Client `%s` loop closing, (%s)", client->_id, ERR_TEXT(s));
             return s;
         }
     }
@@ -171,12 +203,13 @@ void* server__handle_client(void* arg) {
 
     pthread_t tid = pthread_self();
     pthread_detach(tid);
+    bpsp__broker* broker = client->broker;
 
     status__err s = handle__client_loop(client);
 
-    broker__destroy_client(client->broker, client, 1);
+    broker__destroy_client(broker, client, 1);
 
-    topic__print_tree(client->broker->topic_tree);
+    topic__print_tree(broker->topic_tree);
 
     return NULL;
 }

@@ -180,8 +180,7 @@ void client__copy(void* _dst, const void* _src) {
 }
 
 void client__unsub_all(bpsp__client* client, uint8_t lock) {
-    ASSERT_ARG(client, __EMPTY__);
-    ASSERT_ARG(client->broker, __EMPTY__);
+    ASSERT_ARG(client && client->subs && client->broker, __EMPTY__);
 
     if (lock) {
         pthread_mutex_lock(&client->mutex);
@@ -193,8 +192,8 @@ void client__unsub_all(bpsp__client* client, uint8_t lock) {
     HASH_ITER(hh, client->subs, _sub, tmp) {
         HASH_DEL(client->subs, _sub);  // delete it (users advances to next)
         topic__del_subscriber(client->broker->topic_tree, _sub->sub, 0);
-        subscriber__free_hash_elt(_sub);  // free it
         subscriber__free(_sub->sub);
+        subscriber__free_hash_elt(_sub);  // free it
     }
 
     if (lock) {
@@ -222,13 +221,16 @@ void client__dtor(void* _elt) {
     /* } */
 
     if (client->subs) {
-        subscriber__hash *_sub, *tmp;
-        HASH_ITER(hh, client->subs, _sub, tmp) {
-            HASH_DEL(client->subs, _sub);     // delete it (users advances to next)
-            subscriber__free_hash_elt(_sub);  // free it
-        }
-
-        HASH_CLEAR(hh, client->subs);
+        /*         subscriber__hash *_sub, *tmp; */
+        /*         HASH_ITER(hh, client->subs, _sub, tmp) { */
+        /*             HASH_DEL(client->subs, _sub);  // delete it (users advances to next) */
+        /*             topic__del_subscriber(client->broker->topic_tree, _sub->sub, 0); */
+        /*             subscriber__free(_sub->sub); */
+        /*             subscriber__free_hash_elt(_sub);  // free it */
+        /*         } */
+        /*  */
+        /*         HASH_CLEAR(hh, client->subs); */
+        client__unsub_all(client, 0);
     }
 
     if (client->in_frame) {
@@ -321,14 +323,16 @@ status__err client__recv(bpsp__client* client, bpsp__frame* frame, uint8_t lock)
 
     /* pthread_mutex_unlock(&client->mutex); */
 
+    bpsp__connection* conn = client->conn;
+
     // TODO: grab lock for in_frame and conn.read
-    s = frame__recv(client->conn, frame);
+    s = frame__recv(conn, frame);
 
     /* pthread_mutex_unlock(&client->cli_mutex); */
 
     ASSERT_BPSP_OK(s);
 
-    log__trace_in_op(frame->opcode, "");
+    log__trace_in_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     return s;
 }
@@ -358,7 +362,9 @@ status__err client__send(bpsp__client* client, bpsp__frame* frame, uint8_t lock)
         pthread_mutex_lock(&client->mutex);
     }
 
-    s = frame__send(client->conn, frame);
+    bpsp__connection* conn = client->conn;
+
+    s = frame__send(conn, frame);
 
     if (lock) {
         pthread_mutex_unlock(&client->mutex);
@@ -366,7 +372,7 @@ status__err client__send(bpsp__client* client, bpsp__frame* frame, uint8_t lock)
 
     ASSERT_BPSP_OK(s);
 
-    log__trace_out_op(frame->opcode, "");
+    log__trace_out_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     return s;
 }
@@ -474,9 +480,8 @@ status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
 
     if (sub) {
         s = topic__del_subscriber(client->broker->topic_tree, sub, lock);
+        subscriber__free(sub);
     }
-
-    subscriber__free(sub);
 
     return s;
 }

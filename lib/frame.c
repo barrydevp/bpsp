@@ -10,7 +10,7 @@
 #include "util.h"
 
 bpsp__var_header* var_header__new(char* key, char* value) {
-    /* ASSERT_ARG(key, NULL); */
+    ASSERT_ARG(key, NULL);
     /* ASSERT_ARG(strlen(key), NULL); */
     /* ASSERT_ARG(value, NULL); */
 
@@ -397,6 +397,19 @@ status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__ui
     mem__memcpy(frame->payload + pos, payload, data_size);
 
     frame->pos = data_size + pos;
+
+    return s;
+}
+
+status__err frame__replace_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size) {
+    status__err s = BPSP_OK;
+
+    frame__free_payload(frame);
+
+    frame->pos = data_size;
+    frame->payload = payload;
+    frame->data_size = data_size;
+    frame->payload_size = data_size;
 
     return s;
 }

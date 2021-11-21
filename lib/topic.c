@@ -340,7 +340,8 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
             if (!hsh) {
                 hsh = topic__new_hash_node(cur_tok);
                 if (!hsh) {
-                    break;
+                    s = BPSP_NO_MEMORY;
+                    goto RET_ERROR;
                 }
                 HASH_ADD_STR(cur_node->nodes, token, hsh);
 

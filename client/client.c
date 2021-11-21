@@ -117,20 +117,24 @@ void __loop(bpsp__connection* conn) {
     /* s = echo(conn, out); */
     /* frame__SUB(out, (char*)topic, 0, NULL, 0); */
     /* s = echo(conn, out); */
-    /* frame__SUB(out, (char*)"locationA/*", 0, NULL, 0); */
-    /* s = echo(conn, out); */
-    /* frame__SUB(out, (char*)"locationA/+/alo", 0, NULL, 0); */
-    /* s = echo(conn, out); */
-    /* frame__SUB(out, (char*)"locationB/sensorB", 0, NULL, 0); */
-    /* s = echo(conn, out); */
+    frame__SUB(out, NULL, 0, NULL, 0);
+    s = echo(conn, out);
+    frame__SUB(out, (char*)"locationA/*", 0, NULL, 0);
+    s = echo(conn, out);
+    frame__SUB(out, (char*)"locationA/+/alo", 0, NULL, 0);
+    s = echo(conn, out);
+    frame__SUB(out, (char*)"locationB/sensorB", 0, NULL, 0);
+    s = echo(conn, out);
     /* frame__UNSUB(out, (char*)topic, 0); */
     /* s = echo(conn, out); */
-    /* frame__UNSUB(out, (char*)"locationA/+/alo", 0); */
-    /* s = echo(conn, out); */
-    /* frame__UNSUB(out, (char*)"locationB/sensorB", 0); */
-    /* s = echo(conn, out); */
-    frame__OK(out, 0, "Nhiet do: 100*C, do am: 30%");
+    frame__UNSUB(out, (char*)"locationA/+/alo", 0);
     s = echo(conn, out);
+    frame__UNSUB(out, (char*)"locationB/sensorB", 0);
+    s = echo(conn, out);
+    frame__UNSUB(out, NULL, 0);
+    s = echo(conn, out);
+    /* frame__OK(out, 0, "Nhiet do: 100*C, do am: 30%"); */
+    /* s = echo(conn, out); */
     /* frame__ERR(out, 0, BPSP_TIMEOUT, msg); */
     /* s = echo(conn, out); */
     /* frame__ERR(out, 0, BPSP_DRAINING, NULL); */
