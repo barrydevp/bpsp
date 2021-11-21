@@ -29,4 +29,8 @@ void _log__warn(const char* fmt, ...);
     _log__print("ERROR", fmt, ##__VA_ARGS__); \
     log__trace
 
+#define log__trace_in_op(op, fmt, ...) _log__print("TRACE", "<<- %s" fmt, OP_TEXT(op), ##__VA_ARGS__)
+
+#define log__trace_out_op(op, fmt, ...) _log__print("TRACE", "->> %s" fmt, OP_TEXT(op), ##__VA_ARGS__)
+
 #endif  // _LOG_H_

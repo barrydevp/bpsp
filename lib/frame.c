@@ -509,6 +509,7 @@ void frame__print(bpsp__frame* frame) {
         if (frame->data_size > 0) {
             char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
             mem__memcpy(payload, frame->payload, frame->data_size);
+            *(payload + frame->data_size) = '\0';
             printf("%s\n", payload);
             mem__free(payload);
         }

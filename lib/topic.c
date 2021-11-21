@@ -293,7 +293,7 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
 
     /* pthread_mutex_lock(&tree->mutex); */
     int ok = pthread_rwlock_wrlock(&tree->rw_lock);
-    printf("%s, n_tok %d\n", topic, n_tok);
+    /* printf("%s, n_tok %d\n", topic, n_tok); */
 
     topic__node* cur_node = &tree->root;
 

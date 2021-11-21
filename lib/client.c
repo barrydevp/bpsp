@@ -300,61 +300,80 @@ status__err client__destroy(bpsp__client* client) {
     return s;
 }
 
-status__err client__recv(bpsp__client* client) {
+status__err client__recv(bpsp__client* client, bpsp__frame* frame, uint8_t lock) {
     ASSERT_ARG(client, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
 
-    pthread_rwlock_rdlock(&client->rw_lock);
+    // if lock does not set, the caller must check client close
+    if (lock) {
+        pthread_rwlock_rdlock(&client->rw_lock);
 
-    if (client__is_close(client)) {
-        // client has close
+        if (client__is_close(client)) {
+            // client has close
+
+            pthread_rwlock_unlock(&client->rw_lock);
+            return BPSP_CONNECTION_CLOSED;
+        }
 
         pthread_rwlock_unlock(&client->rw_lock);
-        return BPSP_CONNECTION_CLOSED;
     }
 
-    pthread_rwlock_unlock(&client->rw_lock);
     /* pthread_mutex_unlock(&client->mutex); */
 
     // TODO: grab lock for in_frame and conn.read
-    s = frame__recv(client->conn, client->in_frame);
+    s = frame__recv(client->conn, frame);
 
     /* pthread_mutex_unlock(&client->cli_mutex); */
+
+    ASSERT_BPSP_OK(s);
+
+    log__trace_in_op(frame->opcode, "");
 
     return s;
 }
 
-status__err client__send(bpsp__client* client) {
+status__err client__send(bpsp__client* client, bpsp__frame* frame, uint8_t lock) {
     ASSERT_ARG(client, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
 
-    pthread_rwlock_rdlock(&client->rw_lock);
+    // if lock does not set, the caller must check client close
+    if (lock) {
+        pthread_rwlock_rdlock(&client->rw_lock);
 
-    if (client__is_close(client)) {
-        // client has close
+        if (client__is_close(client)) {
+            // client has close
+
+            pthread_rwlock_unlock(&client->rw_lock);
+            return BPSP_CONNECTION_CLOSED;
+        }
 
         pthread_rwlock_unlock(&client->rw_lock);
-        return BPSP_CONNECTION_CLOSED;
     }
-
-    pthread_rwlock_unlock(&client->rw_lock);
 
     // grab lock to write out_frame and net.write
     // TODO: should we use separated mutex?
-    pthread_mutex_lock(&client->mutex);
+    if (lock) {
+        pthread_mutex_lock(&client->mutex);
+    }
 
-    s = frame__send(client->conn, client->out_frame);
+    s = frame__send(client->conn, frame);
 
-    pthread_mutex_unlock(&client->mutex);
+    if (lock) {
+        pthread_mutex_unlock(&client->mutex);
+    }
+
+    ASSERT_BPSP_OK(s);
+
+    log__trace_out_op(frame->opcode, "");
 
     return s;
 }
 
 status__err client__read(bpsp__client* client) {
     //
-    return client__recv(client);
+    return client__recv(client, client->in_frame, 1);
 }
 
 status__err client__write(bpsp__client* client, bpsp__frame* frame) {
@@ -378,6 +397,7 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
     pthread_mutex_lock(&client->mutex);
 
     s = frame__copy(client->out_frame, frame, 1);
+    ASSERT_BPSP_OK(s);
 
     IFN_OK(s) {
         pthread_mutex_unlock(&client->mutex);
@@ -385,7 +405,7 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
         return s;
     }
 
-    s = frame__send(client->conn, client->out_frame);
+    s = client__send(client, client->out_frame, 0);
 
     pthread_mutex_unlock(&client->mutex);
 

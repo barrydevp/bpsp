@@ -9,6 +9,7 @@
 #include "client.h"
 #include "log.h"
 #include "status.h"
+#include "uthash.h"
 
 status__err handle__ECHO(bpsp__client* client) {
     status__err s = BPSP_OK;
@@ -30,8 +31,7 @@ status__err handle__CONNECT(bpsp__client* client) {
 
     ASSERT_BPSP_OK(s);
 
-    /* s = client__write(client, client->out_frame); */
-    s = client__send(client);
+    s = client__send(client, client->out_frame, 1);
 
     IFN_OK(s) {
         perror("client__write()");
@@ -57,7 +57,25 @@ status__err handle__PUB(bpsp__client* client) {
 status__err handle__SUB(bpsp__client* client) {
     status__err s = BPSP_OK;
 
-    s = client__write(client, client->in_frame);
+    bpsp__frame* in = client->in_frame;
+
+    bpsp__var_header* topic_hdr = NULL;
+
+    HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
+
+    ASSERT_ARG(topic_hdr, BPSP_INVALID_TOPIC);
+
+    s = client__sub(client, topic_hdr->value, 1);
+
+    ASSERT_BPSP_OK(s);
+
+    topic__print_tree(client->broker->topic_tree);
+
+    s = frame__OK(client->out_frame, 0, "SUB OK.");
+
+    ASSERT_BPSP_OK(s);
+
+    s = client__send(client, client->out_frame, 1);
 
     IFN_OK(s) {
         perror("client__write()");
@@ -70,7 +88,25 @@ status__err handle__SUB(bpsp__client* client) {
 status__err handle__UNSUB(bpsp__client* client) {
     status__err s = BPSP_OK;
 
-    s = client__write(client, client->in_frame);
+    bpsp__frame* in = client->in_frame;
+
+    bpsp__var_header* topic_hdr = NULL;
+
+    HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
+
+    ASSERT_ARG(topic_hdr, BPSP_INVALID_TOPIC);
+
+    s = client__unsub(client, topic_hdr->value, 1);
+
+    ASSERT_BPSP_OK(s);
+
+    topic__print_tree(client->broker->topic_tree);
+
+    s = frame__OK(client->out_frame, 0, "UNSUB OK.");
+
+    ASSERT_BPSP_OK(s);
+
+    s = client__send(client, client->out_frame, 1);
 
     IFN_OK(s) {
         perror("client__write()");
@@ -139,6 +175,8 @@ void* server__handle_client(void* arg) {
     status__err s = handle__client_loop(client);
 
     broker__destroy_client(client->broker, client, 1);
+
+    topic__print_tree(client->broker->topic_tree);
 
     return NULL;
 }
