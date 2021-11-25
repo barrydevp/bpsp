@@ -1,11 +1,9 @@
 package main;
 
 import java.net.*;
-import java.util.Scanner;
 
 import lib.Constants;
-
-import java.io.File;
+import lib.Frame;
 
 import java.io.*;
 
@@ -93,6 +91,25 @@ public class Client
         }
     }
 
+    public Frame recvFrame() {
+        Frame frame = new Frame();
+        try {
+
+        } catch(Exception e) {
+            System.out.println(e);
+        }
+        return frame;
+    }
+
+    public void sendFrame(Frame frameToSent) {
+        try {
+            byte[] frame = frameToSent.toByteArray();
+            sendBytes(frame, 0, frame.length);
+        } catch(Exception e) {
+            System.out.println(e);
+        }
+    }
+
     public static void main(String args[]) {
 
 			// init ip address and port of server
@@ -110,7 +127,10 @@ public class Client
 
 			// init client and connect to server
 			Client client = new Client(serverIpAddr, port);
-
-			while (true) {}
+            
+            try {
+                Frame frame = new Frame((short)6,(byte)6,(byte)0,10,"\"a\"\"b\"","hoaidzaivl");
+                client.sendFrame(frame);
+            } catch (Exception e) {}
     }
 }
