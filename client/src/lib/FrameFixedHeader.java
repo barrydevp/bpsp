@@ -26,11 +26,16 @@ public class FrameFixedHeader {
 		if (frameHeaderBytes.length != Constants.FIXED_HEADER_SIZE) {
 			throw new Exception("size of frameHeaderBytes is invalid");
 		}
+
 		ByteBuffer buf = ByteBuffer.wrap(frameHeaderBytes); // wrap to bytebuffer for easier processing
 		this.varsHeaderSize = buf.getShort();
 		this.opcode = buf.get();
 		this.flag = buf.get();
 		this.dataSize = buf.getInt();
+
+		if (buf.hasRemaining()) {
+			throw new Exception("error while initing frame fixed header");
+		}
 	}
 
 	//**get & set methods */

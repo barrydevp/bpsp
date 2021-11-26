@@ -7,8 +7,8 @@ import java.io.*;
 public class SocketClient {
 	// initialize socket and input output streams
     public Socket socket            = null;
-    private DataInputStream  in   = null;
-    private DataOutputStream out     = null;
+    protected DataInputStream  in   = null;
+    protected DataOutputStream out     = null;
 
     // constructor to put ip address and port
     public SocketClient(String address, int port)

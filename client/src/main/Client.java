@@ -1,93 +1,21 @@
 package main;
 
-import java.net.*;
+import java.nio.charset.StandardCharsets;
 
 import lib.Constants;
 import lib.Frame;
 import lib.FrameFixedHeader;
 import lib.SocketClient;
 
-import java.io.*;
-
 public class Client extends SocketClient
 {
-    // initialize socket and input output streams
-    public Socket socket            = null;
-    private DataInputStream  in   = null;
-    private DataOutputStream out     = null;
-
-    public static final int CHUNK_SIZE = 4096;
-
     // constructor to put ip address and port
     public Client(String address, int port)
     {
         super(address, port);
     }
-    
-    public String recvString() {
-        String line = "";
-        try {
-            line = in.readUTF();
-            System.out.println(">> Received a message from server: " + line);
-        } catch(IOException i) {
-            System.out.println(i);
-            stop();
-        }
-        return line;
-    }
 
-    public void sendString(String message) {
-        try {
-            out.writeUTF(message);
-            System.out.println(">> Sent a message to server: " + message);
-        } catch(IOException i) {
-            System.out.println(i);
-            stop();
-        }
-    }
-
-    public byte[] recvBytes(int off, int len) {
-        byte[] result = new byte[len];
-        try {
-            in.readFully(result, off, len);
-        } catch(IOException i) {
-            System.out.println(i);
-            stop();
-        }
-        return result;
-    }
-    public byte[] recvBytes(int len) {
-        byte[] result = new byte[len];
-        try {
-            in.readFully(result, 0, len);
-        } catch(IOException i) {
-            System.out.println(i);
-            stop();
-        }
-        return result;
-    }
-
-    public void sendBytes(byte[] bytes, int off, int len) {
-        try {
-            out.write(bytes, off, len);
-        } catch(IOException i) {
-            System.out.println(i);
-        }
-    }
-
-    public void stop() {
-        try {
-            // close connection
-            in.close();
-            out.close();
-            socket.close();
-            System.out.println("Closed connection");
-        } catch(IOException i) {
-            System.out.println(i);
-        }
-    }
-
-    public Frame recvFrame() {
+    public Frame recvFrame() throws Exception {
         Frame frame = null;
         try {
             //**read fixed header */
@@ -98,18 +26,18 @@ public class Client extends SocketClient
             //**get variables header */
             int fixedHeaderSize = (int)fixedHeader.getVarsHeaderSize();
             byte[] varsHeaderBytes = recvBytes(fixedHeaderSize);
-            String varHeaders = varsHeaderBytes.toString();
+            String varHeaders = new String(varsHeaderBytes, StandardCharsets.UTF_8);
 
             //** get frame data */
             int dataSize = (int)fixedHeader.getDataSize();
             byte[] dataBytes = recvBytes(dataSize);
-            String data = dataBytes.toString();
+            String data = new String(dataBytes, StandardCharsets.UTF_8);
 
             //**build frame */
             frame = new Frame(fixedHeader, varHeaders, data);
 
         } catch(Exception e) {
-            System.out.println(e);
+            throw e;
         }
         return frame;
     }
@@ -119,12 +47,12 @@ public class Client extends SocketClient
             byte[] frame = frameToSent.toByteArray();
             sendBytes(frame, 0, frame.length);
         } catch(Exception e) {
-            System.out.println(e);
+            throw e;
         }
     }
 
     public static void main(String args[]) {
-
+        try {
 			// init ip address and port of server
 			String serverIpAddr;
 			int serverPort;
@@ -141,10 +69,18 @@ public class Client extends SocketClient
 			// init client and connect to server
 			Client client = new Client(serverIpAddr, serverPort);
             
-            try {
-                Frame frame = new Frame((byte)2,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
-                client.sendFrame(frame);
-            } catch (Exception e) {}
-            while (true) {}
+            Frame frame = new Frame((byte)2,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
+            client.sendFrame(frame);
+
+            while (true) {
+                if (client.in.available() > 0) {
+                    Frame recvFrame = client.recvFrame();
+                    recvFrame.print();
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

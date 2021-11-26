@@ -74,6 +74,11 @@ public class Frame {
 		this.fixedHeader = fixedHeader;
 	}
 
+	public void print() {
+		System.out.println("---------FRAME RECV---------");
+		System.out.println(data);
+	}
+
 	public byte[] toByteArray() {
 		ByteBuffer buffer = ByteBuffer.allocate(Constants.FIXED_HEADER_SIZE + fixedHeader.getVarsHeaderSize() + fixedHeader.getDataSize());
 		buffer.put(fixedHeader.toByteArray());
