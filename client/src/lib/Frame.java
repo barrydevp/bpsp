@@ -3,15 +3,34 @@ package lib;
 import java.nio.ByteBuffer;
 
 public class Frame {
-	private short varsHeaderSize;
-	private byte opcode;
-	private byte flag;
-	private int dataSize;
+	FrameFixedHeader fixedHeader; // fixed header attribute
+	//**data attributes */
 	private String varHeaders;
 	private String data;
 
+	//**constants */
+	
+
 	//**constructors */
 	public Frame() {}
+	public Frame(byte opcode, String varHeaders, String data) {
+		try {
+			this.fixedHeader = new FrameFixedHeader((short)varHeaders.length(),opcode,(byte)0,data.length());
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+		this.varHeaders = varHeaders;
+		this.data = data;
+	}
+	public Frame(byte opcode, byte flag, String varHeaders, String data) {
+		try {
+			this.fixedHeader = new FrameFixedHeader((short)varHeaders.length(),opcode,flag,data.length());
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+		this.varHeaders = varHeaders;
+		this.data = data;
+	}
 	public Frame(short varsHeaderSize, byte opcode, byte flag, int dataSize, String varHeaders, String data) throws Exception {
 		if (varsHeaderSize != (short)varHeaders.length()) {
 			throw new ExceptionInInitializerError("size of variable header is not correct");
@@ -19,66 +38,39 @@ public class Frame {
 		if (dataSize != data.length()) {
 			throw new ExceptionInInitializerError("size of data is not correct");
 		}
-		this.varsHeaderSize = varsHeaderSize;
-		this.opcode = opcode;
-		this.flag = flag;
-		this.dataSize = dataSize;
+		this.fixedHeader = new FrameFixedHeader((short)varHeaders.length(),opcode,flag,data.length());
 		this.varHeaders = varHeaders;
 		this.data = data;
 	}
 
 	//**get & set methods */
-	public short getVarsHeaderSize() {
-		return varsHeaderSize;
-	}
-	public byte getOpcode() {
-		return opcode;
-	}
-	public byte getFlag() {
-		return flag;
-	}
-	public int getDataSize() {
-		return dataSize;
-	}
 	public String getVarHeaders() {
 		return varHeaders;
 	}
 	public String getData() {
 		return data;
 	}
-	public void setVarsHeaderSize(short varsHeaderSize) {
-		this.varsHeaderSize = varsHeaderSize;
-	}
-	public void setOpcode(byte opcode) {
-		this.opcode = opcode;
-	}
-	public void setFlag(byte flag) {
-		this.flag = flag;
-	}
-	public void setDataSize(int dataSize) {
-		this.dataSize = dataSize;
-	}
 	public void setVarHeaders(String varHeaders) {
 		this.varHeaders = varHeaders;
+		this.fixedHeader.setVarsHeaderSize((short)varHeaders.length());
 	}
 	public void setData(String data) {
 		this.data = data;
+		this.fixedHeader.setDataSize(data.length());
 	}
 	public void setFrameControl(byte opcode,byte flag) {
-		this.opcode = opcode;
-		this.flag = flag;
+		this.fixedHeader.setOpcode(opcode);
+		this.fixedHeader.setFlag(flag);
+	}
+	public void setFixedHeader(FrameFixedHeader fixedHeader) {
+		this.fixedHeader = fixedHeader;
 	}
 
 	public byte[] toByteArray() {
-		ByteBuffer buffer = ByteBuffer.allocate(Constants.FIXED_HEADER_SIZE + varsHeaderSize + dataSize);
-
-		buffer.putShort(varsHeaderSize);
-		buffer.put(opcode);
-		buffer.put(flag);
-		buffer.putInt(dataSize);
+		ByteBuffer buffer = ByteBuffer.allocate(Constants.FIXED_HEADER_SIZE + fixedHeader.getVarsHeaderSize() + fixedHeader.getDataSize());
+		buffer.put(fixedHeader.toByteArray());
 		buffer.put(varHeaders.getBytes());
 		buffer.put(data.getBytes());
-
 		return buffer.array();
 	}
 }

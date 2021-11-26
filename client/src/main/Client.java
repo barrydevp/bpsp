@@ -69,11 +69,20 @@ public class Client
         }
         return result;
     }
+    public byte[] recvBytes(int len) {
+        byte[] result = new byte[len];
+        try {
+            in.readFully(result, 0, len);
+        } catch(IOException i) {
+            System.out.println(i);
+            stop();
+        }
+        return result;
+    }
 
     public void sendBytes(byte[] bytes, int off, int len) {
         try {
             out.write(bytes, off, len);
-            System.out.println("Wrote " + len + " bytes to client");
         } catch(IOException i) {
             System.out.println(i);
         }
@@ -94,6 +103,10 @@ public class Client
     public Frame recvFrame() {
         Frame frame = new Frame();
         try {
+            //**read fixed header */
+            byte[] fixedHeader = new byte[Constants.FIXED_HEADER_SIZE];
+            fixedHeader = recvBytes(Constants.FIXED_HEADER_SIZE);
+            
 
         } catch(Exception e) {
             System.out.println(e);
@@ -114,23 +127,24 @@ public class Client
 
 			// init ip address and port of server
 			String serverIpAddr;
-			int port;
+			int serverPort;
 
 			// get ip address and port of server
 			if (args.length < 2 || args[0].isBlank() || args[1].isBlank()) {
 				serverIpAddr = Constants.DEFAULT_SERVER_IP_ADDR;
-				port = Constants.DEFAULT_SERVER_PORT;
+				serverPort = Constants.DEFAULT_SERVER_PORT;
 			} else {
 				serverIpAddr = args[0];
-				port = Integer.parseInt(args[1]);
+				serverPort = Integer.parseInt(args[1]);
 			}
 
 			// init client and connect to server
-			Client client = new Client(serverIpAddr, port);
+			Client client = new Client(serverIpAddr, serverPort);
             
             try {
-                Frame frame = new Frame((short)6,(byte)6,(byte)0,10,"\"a\"\"b\"","hoaidzaivl");
+                Frame frame = new Frame((byte)3,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
                 client.sendFrame(frame);
             } catch (Exception e) {}
+            while (true) {}
     }
 }
