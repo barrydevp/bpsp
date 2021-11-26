@@ -22,8 +22,15 @@ public class FrameFixedHeader {
 		this.flag = flag;
 		this.dataSize = dataSize;
 	}
-	public FrameFixedHeader(byte[] frameHeaderBytes) {
-
+	public FrameFixedHeader(byte[] frameHeaderBytes) throws Exception {
+		if (frameHeaderBytes.length != Constants.FIXED_HEADER_SIZE) {
+			throw new Exception("size of frameHeaderBytes is invalid");
+		}
+		ByteBuffer buf = ByteBuffer.wrap(frameHeaderBytes); // wrap to bytebuffer for easier processing
+		this.varsHeaderSize = buf.getShort();
+		this.opcode = buf.get();
+		this.flag = buf.get();
+		this.dataSize = buf.getInt();
 	}
 
 	//**get & set methods */

@@ -4,10 +4,12 @@ import java.net.*;
 
 import lib.Constants;
 import lib.Frame;
+import lib.FrameFixedHeader;
+import lib.SocketClient;
 
 import java.io.*;
 
-public class Client
+public class Client extends SocketClient
 {
     // initialize socket and input output streams
     public Socket socket            = null;
@@ -19,22 +21,7 @@ public class Client
     // constructor to put ip address and port
     public Client(String address, int port)
     {
-        // establish a connection
-        try
-        {
-            socket = new Socket(address, port);
-            System.out.println("Connected");
-
-            // take input stream
-            in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-  
-            // take output stream
-            out = new DataOutputStream(socket.getOutputStream());
-        } catch(UnknownHostException u) {
-            System.out.println(u);
-        } catch(IOException i) {
-            System.out.println(i);
-        }
+        super(address, port);
     }
     
     public String recvString() {
@@ -101,12 +88,25 @@ public class Client
     }
 
     public Frame recvFrame() {
-        Frame frame = new Frame();
+        Frame frame = null;
         try {
             //**read fixed header */
-            byte[] fixedHeader = new byte[Constants.FIXED_HEADER_SIZE];
-            fixedHeader = recvBytes(Constants.FIXED_HEADER_SIZE);
-            
+            byte[] fixedHeaderBytes = new byte[Constants.FIXED_HEADER_SIZE];
+            fixedHeaderBytes = recvBytes(Constants.FIXED_HEADER_SIZE);
+            FrameFixedHeader fixedHeader = new FrameFixedHeader(fixedHeaderBytes);
+
+            //**get variables header */
+            int fixedHeaderSize = (int)fixedHeader.getVarsHeaderSize();
+            byte[] varsHeaderBytes = recvBytes(fixedHeaderSize);
+            String varHeaders = varsHeaderBytes.toString();
+
+            //** get frame data */
+            int dataSize = (int)fixedHeader.getDataSize();
+            byte[] dataBytes = recvBytes(dataSize);
+            String data = dataBytes.toString();
+
+            //**build frame */
+            frame = new Frame(fixedHeader, varHeaders, data);
 
         } catch(Exception e) {
             System.out.println(e);
@@ -142,7 +142,7 @@ public class Client
 			Client client = new Client(serverIpAddr, serverPort);
             
             try {
-                Frame frame = new Frame((byte)3,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
+                Frame frame = new Frame((byte)2,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
                 client.sendFrame(frame);
             } catch (Exception e) {}
             while (true) {}

@@ -13,6 +13,14 @@ public class Frame {
 
 	//**constructors */
 	public Frame() {}
+	public Frame(FrameFixedHeader fixedHeader, String varHeaders, String data) throws Exception {
+		if (fixedHeader.getVarsHeaderSize() != varHeaders.length() || fixedHeader.getDataSize() != data.length()) {
+			throw new Exception("var header size or data size is not valid");
+		}
+		this.fixedHeader = fixedHeader;
+		this.varHeaders = varHeaders;
+		this.data = data;
+	}
 	public Frame(byte opcode, String varHeaders, String data) {
 		try {
 			this.fixedHeader = new FrameFixedHeader((short)varHeaders.length(),opcode,(byte)0,data.length());
