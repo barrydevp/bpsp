@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import resources.Constants;
 
 public class FrameFixedHeader {
+
 	//**constants */
 	public static final int VARS_SIZE_OFFSET = 0;
 	public static final int OPCODE_OFFSET = 2;
@@ -14,7 +15,7 @@ public class FrameFixedHeader {
 	//**attributes */
 	private short varsHeaderSize;
 	private byte opcode;
-	private byte flag;
+	private byte flag = 00000000;
 	private int dataSize;
 
 	//**constructors */
@@ -24,7 +25,7 @@ public class FrameFixedHeader {
 		this.flag = flag;
 		this.dataSize = dataSize;
 	}
-	public FrameFixedHeader(byte[] frameHeaderBytes) throws Exception {
+	public FrameFixedHeader(byte[] frameHeaderBytes) throws Exception { // from byte array
 		if (frameHeaderBytes.length != Constants.FIXED_HEADER_SIZE) {
 			throw new Exception("size of frameHeaderBytes is invalid");
 		}
@@ -36,7 +37,7 @@ public class FrameFixedHeader {
 		this.dataSize = buf.getInt();
 
 		if (buf.hasRemaining()) {
-			throw new Exception("error while initing frame fixed header");
+			throw new Exception("error while creating frame fixed header");
 		}
 	}
 
@@ -66,17 +67,20 @@ public class FrameFixedHeader {
 		this.dataSize = dataSize;
 	}
 
+	//**behavior methods */
+	public void print() { // print detail to console
+		System.out.println("(" + (int)varsHeaderSize + ", " + (int)opcode + ", " + (int)flag + ")");
+	}
+
 	//**transform methods */
 	public byte[] toByteArray() {
 		ByteBuffer buffer = ByteBuffer.allocate(Constants.FIXED_HEADER_SIZE);
+
 		buffer.putShort(varsHeaderSize);
 		buffer.put(opcode);
 		buffer.put(flag);
 		buffer.putInt(dataSize);
+		
 		return buffer.array();
-	}
-
-	public void print() {
-		System.out.println("(" + (int)varsHeaderSize + ", " + (int)opcode + ", " + (int)flag + ")");
 	}
 }

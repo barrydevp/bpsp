@@ -5,12 +5,10 @@ import resources.Constants;
 
 public class Frame {
 	FrameFixedHeader fixedHeader; // fixed header attribute
+
 	//**data attributes */
 	private String varHeaders;
 	private String data;
-
-	//**constants */
-	
 
 	//**constructors */
 	public Frame() {}
@@ -75,7 +73,8 @@ public class Frame {
 		this.fixedHeader = fixedHeader;
 	}
 
-	public void print() {
+	//**behavior methods */
+	public void print() { // print detail of frame to console
 		System.out.println("---------[FRAME]---------");
 		fixedHeader.print();
 		if ((int)fixedHeader.getVarsHeaderSize() > 0) {
@@ -87,6 +86,7 @@ public class Frame {
 		}
 	}
 
+	//**transform methods */
 	public byte[] toByteArray() {
 		ByteBuffer buffer = ByteBuffer.allocate(Constants.FIXED_HEADER_SIZE + fixedHeader.getVarsHeaderSize() + fixedHeader.getDataSize());
 		buffer.put(fixedHeader.toByteArray());
