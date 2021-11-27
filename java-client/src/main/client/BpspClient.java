@@ -49,7 +49,7 @@ public class BpspClient extends SocketClient {
 
     public void sendFrame(Frame frameToSent) throws Exception {
         try {
-            byte[] frame = frameToSent.toByteArray();
+            byte[] frame = frameToSent.toByteArray(); // convert frame to byte array
             sendBytes(frame, 0, frame.length);
         } catch(Exception e) {
             LOGGER.error("error while sending frame", e);

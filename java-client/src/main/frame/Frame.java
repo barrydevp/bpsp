@@ -76,8 +76,15 @@ public class Frame {
 	}
 
 	public void print() {
-		System.out.println("---------FRAME RECV---------");
-		System.out.println(data);
+		System.out.println("---------[FRAME]---------");
+		fixedHeader.print();
+		if ((int)fixedHeader.getVarsHeaderSize() > 0) {
+			System.out.println(varHeaders);
+		}
+		if (fixedHeader.getDataSize() > 0) {
+			System.out.println("##########");
+			System.out.println(data);
+		}
 	}
 
 	public byte[] toByteArray() {

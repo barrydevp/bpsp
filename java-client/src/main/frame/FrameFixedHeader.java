@@ -75,4 +75,8 @@ public class FrameFixedHeader {
 		buffer.putInt(dataSize);
 		return buffer.array();
 	}
+
+	public void print() {
+		System.out.println("(" + (int)varsHeaderSize + ", " + (int)opcode + ", " + (int)flag + ")");
+	}
 }

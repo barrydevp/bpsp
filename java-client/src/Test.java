@@ -7,7 +7,7 @@ import main.frame.Frame;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-public class App {
+public class Test {
 
     // public App() {
         // super();
@@ -44,13 +44,13 @@ public class App {
 			// init client and connect to server
 			bpspClient = new BpspClient(serverIpAddr, serverPort);
             
-            Frame connectFrame = new Frame((byte)2,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
+            Frame connectFrame = new Frame((byte)2,(byte)0,"","hoaidzaivl");
             bpspClient.sendFrame(connectFrame);
             Frame subFrame = new Frame((byte)4,(byte)0,"\"x-topic\"\"locationA\";","");
             bpspClient.sendFrame(subFrame);
             Frame pubFrame = new Frame((byte)3,(byte)0,"\"x-topic\"\"locationA\";","hoai dep trai vl");
             bpspClient.sendFrame(pubFrame);
-            Frame unsubFrame = new Frame((byte)5,(byte)0,"\"x-topic\"\"locationA\";","hoai dep trai vl");
+            Frame unsubFrame = new Frame((byte)5,(byte)0,"\"x-topic\"\"locationA\";","");
             bpspClient.sendFrame(unsubFrame);
 
             while (true) {

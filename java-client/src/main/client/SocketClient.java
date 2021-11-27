@@ -49,7 +49,7 @@ public class SocketClient {
         return false;
     }
     
-    public String recvString() {
+    protected String recvString() {
         String line = "";
         try {
             line = in.readUTF();
@@ -59,7 +59,7 @@ public class SocketClient {
         return line;
     }
 
-    public void sendString(String message) {
+    protected void sendString(String message) {
         try {
             out.writeUTF(message);
         } catch(IOException i) {
@@ -67,7 +67,7 @@ public class SocketClient {
         }
     }
 
-    public byte[] recvBytes(int off, int len) {
+    protected byte[] recvBytes(int off, int len) {
         byte[] result = new byte[len];
         try {
             in.readFully(result, off, len);
@@ -76,7 +76,7 @@ public class SocketClient {
         }
         return result;
     }
-    public byte[] recvBytes(int len) {
+    protected byte[] recvBytes(int len) {
         byte[] result = new byte[len];
         try {
             in.readFully(result, 0, len);
@@ -86,7 +86,7 @@ public class SocketClient {
         return result;
     }
 
-    public void sendBytes(byte[] bytes, int off, int len) {
+    protected void sendBytes(byte[] bytes, int off, int len) {
         try {
             out.write(bytes, off, len);
         } catch(IOException i) {
