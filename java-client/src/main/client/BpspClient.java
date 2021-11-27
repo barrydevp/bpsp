@@ -7,13 +7,18 @@ import main.frame.FrameFixedHeader;
 
 import java.nio.charset.StandardCharsets;
 
-public class Client extends SocketClient {
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
+public class BpspClient extends SocketClient {
+
+    private static final Logger LOGGER = LogManager.getLogger(BpspClient.class);
+
     // constructor to put ip address and port
-    public Client(String address, int port)
+    public BpspClient(String address, int port)
     {
         super(address, port);
     }
-    
 
     public Frame recvFrame() throws Exception {
         Frame frame = null;
@@ -37,17 +42,17 @@ public class Client extends SocketClient {
             frame = new Frame(fixedHeader, varHeaders, data);
 
         } catch(Exception e) {
-            throw e;
+            LOGGER.error("error while receiving frame", e);
         }
         return frame;
     }
 
-    public void sendFrame(Frame frameToSent) {
+    public void sendFrame(Frame frameToSent) throws Exception {
         try {
             byte[] frame = frameToSent.toByteArray();
             sendBytes(frame, 0, frame.length);
         } catch(Exception e) {
-            throw e;
+            LOGGER.error("error while sending frame", e);
         }
     }
 }

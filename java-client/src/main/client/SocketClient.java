@@ -4,7 +4,13 @@ import java.net.*;
 
 import java.io.*;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class SocketClient {
+
+    private static final Logger LOGGER = LogManager.getLogger(SocketClient.class);
+
 	// initialize socket and input output streams
     public Socket socket            = null;
     protected DataInputStream  in   = null;
@@ -17,7 +23,8 @@ public class SocketClient {
         try
         {
             socket = new Socket(address, port);
-            System.out.println("Connected");
+
+            LOGGER.info("Socket connection established to " + address + " - " + "port");
 
             // take input stream
             in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -25,9 +32,9 @@ public class SocketClient {
             // take output stream
             out = new DataOutputStream(socket.getOutputStream());
         } catch(UnknownHostException u) {
-            System.out.println(u);
+            LOGGER.error("unknown host", u);
         } catch(IOException i) {
-            System.out.println(i);
+            LOGGER.error("error while get socket io stream", i);
         }
     }
 
@@ -37,7 +44,7 @@ public class SocketClient {
                 return true;
             }
         } catch (IOException e) {
-
+            LOGGER.error(e);
         }
         return false;
     }
@@ -46,10 +53,8 @@ public class SocketClient {
         String line = "";
         try {
             line = in.readUTF();
-            System.out.println(">> Received a message from server: " + line);
         } catch(IOException i) {
-            System.out.println(i);
-            stop();
+            LOGGER.error(i);
         }
         return line;
     }
@@ -57,10 +62,8 @@ public class SocketClient {
     public void sendString(String message) {
         try {
             out.writeUTF(message);
-            System.out.println(">> Sent a message to server: " + message);
         } catch(IOException i) {
-            System.out.println(i);
-            stop();
+            LOGGER.error(i);
         }
     }
 
@@ -69,8 +72,7 @@ public class SocketClient {
         try {
             in.readFully(result, off, len);
         } catch(IOException i) {
-            System.out.println(i);
-            stop();
+            LOGGER.error("error while receiving bytes",i);
         }
         return result;
     }
@@ -79,8 +81,7 @@ public class SocketClient {
         try {
             in.readFully(result, 0, len);
         } catch(IOException i) {
-            System.out.println(i);
-            stop();
+            LOGGER.error("error while receiving bytes",i);
         }
         return result;
     }
@@ -89,7 +90,7 @@ public class SocketClient {
         try {
             out.write(bytes, off, len);
         } catch(IOException i) {
-            System.out.println(i);
+            LOGGER.error("error while sending bytes",i);
         }
     }
 
@@ -99,9 +100,9 @@ public class SocketClient {
             in.close();
             out.close();
             socket.close();
-            System.out.println("Closed connection");
+            LOGGER.info("Closed connection");
         } catch(IOException i) {
-            System.out.println(i);
+            LOGGER.error("error while stopping socket client");
         }
     }
 }

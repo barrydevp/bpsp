@@ -1,10 +1,30 @@
 import resources.Constants;
-
-import main.client.Client;
+import utils.SystemUtils;
+import main.client.BpspClient;
 import main.frame.Frame;
 
+//**import log4j2 */
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class App {
+
+    // public App() {
+        // super();
+    // }
+
+    private static Logger LOGGER = null;
+    
     public static void main(String[] args) throws Exception {
+
+        //**set up logger */
+        System.setProperty("log4j.configurationFile",  "resources/log4j2.xml"); // set logger config file
+        LOGGER = LogManager.getLogger(App.class);
+
+        LOGGER.info("Client began to start");
+
+        BpspClient bpspClient = null; // init bpsp client
+
         try {
 			// init ip address and port of server
 			String serverIpAddr;
@@ -20,20 +40,21 @@ public class App {
 			}
 
 			// init client and connect to server
-			Client client = new Client(serverIpAddr, serverPort);
+			bpspClient = new BpspClient(serverIpAddr, serverPort);
             
             Frame frame = new Frame((byte)2,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
-            client.sendFrame(frame);
+            bpspClient.sendFrame(frame);
 
             while (true) {
-                if (client.hasData()) {
-                    Frame recvFrame = client.recvFrame();
+                if (bpspClient.hasData()) {
+                    Frame recvFrame = bpspClient.recvFrame();
                     recvFrame.print();
                 }
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+            LOGGER.error(e.getMessage());
             e.printStackTrace();
+            bpspClient.stop();
         }
     }
 }
