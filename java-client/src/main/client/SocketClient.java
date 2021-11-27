@@ -1,4 +1,4 @@
-package lib;
+package main.client;
 
 import java.net.*;
 
@@ -29,6 +29,17 @@ public class SocketClient {
         } catch(IOException i) {
             System.out.println(i);
         }
+    }
+
+    public Boolean hasData() {
+        try {
+            if (in.available() > 0) {
+                return true;
+            }
+        } catch (IOException e) {
+
+        }
+        return false;
     }
     
     public String recvString() {

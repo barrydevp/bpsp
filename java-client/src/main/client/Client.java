@@ -1,19 +1,19 @@
-package main;
+package main.client;
+
+import resources.Constants;
+
+import main.frame.Frame;
+import main.frame.FrameFixedHeader;
 
 import java.nio.charset.StandardCharsets;
 
-import lib.Constants;
-import lib.Frame;
-import lib.FrameFixedHeader;
-import lib.SocketClient;
-
-public class Client extends SocketClient
-{
+public class Client extends SocketClient {
     // constructor to put ip address and port
     public Client(String address, int port)
     {
         super(address, port);
     }
+    
 
     public Frame recvFrame() throws Exception {
         Frame frame = null;
@@ -48,39 +48,6 @@ public class Client extends SocketClient
             sendBytes(frame, 0, frame.length);
         } catch(Exception e) {
             throw e;
-        }
-    }
-
-    public static void main(String args[]) {
-        try {
-			// init ip address and port of server
-			String serverIpAddr;
-			int serverPort;
-
-			// get ip address and port of server
-			if (args.length < 2 || args[0].isBlank() || args[1].isBlank()) {
-				serverIpAddr = Constants.DEFAULT_SERVER_IP_ADDR;
-				serverPort = Constants.DEFAULT_SERVER_PORT;
-			} else {
-				serverIpAddr = args[0];
-				serverPort = Integer.parseInt(args[1]);
-			}
-
-			// init client and connect to server
-			Client client = new Client(serverIpAddr, serverPort);
-            
-            Frame frame = new Frame((byte)2,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
-            client.sendFrame(frame);
-
-            while (true) {
-                if (client.in.available() > 0) {
-                    Frame recvFrame = client.recvFrame();
-                    recvFrame.print();
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }

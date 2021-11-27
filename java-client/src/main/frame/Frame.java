@@ -1,6 +1,7 @@
-package lib;
+package main.frame;
 
 import java.nio.ByteBuffer;
+import resources.Constants;
 
 public class Frame {
 	FrameFixedHeader fixedHeader; // fixed header attribute
