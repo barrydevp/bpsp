@@ -13,8 +13,13 @@ BPSP is light weight publish subscribe protocol. The project contain the [specif
 
 ### Dependencies
 
-- JDK 11
-- [Apache Maven](https://maven.apache.org/download.cgi), you can install this on linux with `apt`:
+- **`Java 11`**, you can install OpenJDK 11 on linux with `apt`:
+```
+sudo apt update
+sudo apt install openjdk-11-jdk
+```
+
+- [**Apache Maven**](https://maven.apache.org/download.cgi), you can install this on linux with `apt`:
 ```
 sudo apt update
 sudo apt install maven
