@@ -1,4 +1,4 @@
-package resources;
+package com.resources;
 
 public enum Operation {
 	INFO("INFO", (short)1),

@@ -1,4 +1,4 @@
-package main.client;
+package com.core.client;
 
 public class PublisherClient extends BpspClient implements Publisher {
 	public PublisherClient(String address, int port) {

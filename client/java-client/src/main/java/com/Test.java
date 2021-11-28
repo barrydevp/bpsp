@@ -1,11 +1,15 @@
-import resources.Constants;
-import utils.SystemUtils;
-import main.client.BpspClient;
-import main.frame.Frame;
+package com;
 
-//**import log4j2 */
+import com.core.client.BpspClient;
+import com.core.frame.Frame;
+
+import com.resources.Constants;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
+import com.utils.SystemUtils;
+
 
 public class Test {
 
@@ -13,15 +17,11 @@ public class Test {
         // super();
     // }
 
-    private static Logger LOGGER = null;
+    private static Logger LOGGER = LogManager.getLogger(Test.class);
     
     public static void main(String[] args) throws Exception {
 
         SystemUtils.clearConsole();
-
-        //**set up logger */
-        System.setProperty("log4j.configurationFile",  "resources/log4j2.xml"); // set logger config file
-        LOGGER = LogManager.getLogger(App.class);
 
         LOGGER.info("Client began to start");
 

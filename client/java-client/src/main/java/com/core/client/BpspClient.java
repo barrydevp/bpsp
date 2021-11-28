@@ -1,14 +1,14 @@
-package main.client;
+package com.core.client;
 
-import resources.Constants;
+import com.core.frame.Frame;
+import com.core.frame.FrameFixedHeader;
 
-import main.frame.Frame;
-import main.frame.FrameFixedHeader;
-
-import java.nio.charset.StandardCharsets;
+import com.resources.Constants;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
+import java.nio.charset.StandardCharsets;
 
 public class BpspClient extends SocketClient {
 

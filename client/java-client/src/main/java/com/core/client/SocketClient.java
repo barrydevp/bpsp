@@ -1,11 +1,11 @@
-package main.client;
+package com.core.client;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.net.*;
 
 import java.io.*;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 public class SocketClient {
 

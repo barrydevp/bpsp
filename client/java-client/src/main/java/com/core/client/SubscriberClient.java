@@ -1,4 +1,4 @@
-package main.client;
+package com.core.client;
 
 public class SubscriberClient extends BpspClient implements Subscriber {
 	

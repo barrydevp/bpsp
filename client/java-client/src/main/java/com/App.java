@@ -1,11 +1,15 @@
-import resources.Constants;
-import utils.SystemUtils;
-import main.client.BpspClient;
-import main.frame.Frame;
+package com;
 
-//**import log4j2 */
+import com.core.client.BpspClient;
+import com.core.frame.Frame;
+
+import com.resources.Constants;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
+import com.utils.SystemUtils;
+
 
 public class App {
 
@@ -13,15 +17,11 @@ public class App {
         // super();
     // }
 
-    private static Logger LOGGER = null;
+    private static Logger LOGGER = LogManager.getLogger(App.class);
     
     public static void main(String[] args) throws Exception {
 
         SystemUtils.clearConsole();
-
-        //**set up logger */
-        System.setProperty("log4j.configurationFile",  "resources/log4j2.xml"); // set logger config file
-        LOGGER = LogManager.getLogger(App.class);
 
         LOGGER.info("Client began to start");
 
@@ -44,13 +44,13 @@ public class App {
 			// init client and connect to server
 			bpspClient = new BpspClient(serverIpAddr, serverPort);
             
-            Frame connectFrame = new Frame((byte)2,(byte)0,"\"x-topic\"\"locationA\";","hoaidzaivl");
+            Frame connectFrame = new Frame((byte)2,(byte)0,"","hoaidzaivl");
             bpspClient.sendFrame(connectFrame);
             Frame subFrame = new Frame((byte)4,(byte)0,"\"x-topic\"\"locationA\";","");
             bpspClient.sendFrame(subFrame);
             Frame pubFrame = new Frame((byte)3,(byte)0,"\"x-topic\"\"locationA\";","hoai dep trai vl");
             bpspClient.sendFrame(pubFrame);
-            Frame unsubFrame = new Frame((byte)5,(byte)0,"\"x-topic\"\"locationA\";","hoai dep trai vl");
+            Frame unsubFrame = new Frame((byte)5,(byte)0,"\"x-topic\"\"locationA\";","");
             bpspClient.sendFrame(unsubFrame);
 
             while (true) {
