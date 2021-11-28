@@ -1,4 +1,4 @@
-package resources;
+package com.resources;
 
 public final class Constants {
 	//**general */

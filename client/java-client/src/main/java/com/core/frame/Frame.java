@@ -1,7 +1,8 @@
-package main.frame;
+package com.core.frame;
+
+import com.resources.Constants;
 
 import java.nio.ByteBuffer;
-import resources.Constants;
 
 public class Frame {
 	FrameFixedHeader fixedHeader; // fixed header attribute
