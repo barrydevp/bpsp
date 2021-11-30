@@ -1,7 +1,8 @@
 package com;
 
-import com.core.client.BpspClient;
 import com.core.frame.Frame;
+import com.core.client.SubscriberClient;
+import com.core.client.PublisherClient;
 
 import com.resources.Constants;
 
@@ -25,7 +26,8 @@ public class App {
 
         LOGGER.info("Client began to start");
 
-        BpspClient bpspClient = null; // init bpsp client
+        SubscriberClient subClient = null;
+        PublisherClient pubClient = null;
 
         try {
 			// init ip address and port of server
@@ -42,27 +44,28 @@ public class App {
 			}
 
 			// init client and connect to server
-			bpspClient = new BpspClient(serverIpAddr, serverPort);
-            
-            Frame connectFrame = new Frame((byte)2,(byte)0,"","hoaidzaivl");
-            bpspClient.sendFrame(connectFrame);
-            Frame subFrame = new Frame((byte)4,(byte)0,"\"x-topic\"\"locationA\";","");
-            bpspClient.sendFrame(subFrame);
-            Frame pubFrame = new Frame((byte)3,(byte)0,"\"x-topic\"\"locationA\";","hoai dep trai vl");
-            bpspClient.sendFrame(pubFrame);
-            Frame unsubFrame = new Frame((byte)5,(byte)0,"\"x-topic\"\"locationA\";","");
-            bpspClient.sendFrame(unsubFrame);
+			subClient = new SubscriberClient(serverIpAddr, serverPort);
+            pubClient = new PublisherClient(serverIpAddr, serverPort);
 
+            subClient.connect();
+            subClient.sub("locationA");
+
+            pubClient.connect();
+            pubClient.pub("locationA", "hoai dep trai");
+            
             while (true) {
-                if (bpspClient.hasData()) {
-                    Frame recvFrame = bpspClient.recvFrame();
+                if (subClient.hasData()) {
+                    Frame recvFrame = subClient.recvFrame();
                     recvFrame.print();
                 }
             }
+
+
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             e.printStackTrace();
-            bpspClient.stop();
+            subClient.stop();
+            pubClient.stop();
         }
     }
 }
