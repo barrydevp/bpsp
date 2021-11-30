@@ -5,14 +5,17 @@ import com.resources.Constants;
 import java.nio.ByteBuffer;
 
 public class Frame {
-	FrameFixedHeader fixedHeader; // fixed header attribute
+	private FrameFixedHeader fixedHeader = new FrameFixedHeader(); // fixed header attribute
 
 	//**data attributes */
-	private String varHeaders;
-	private String data;
+	private String varHeaders = "";
+	private String data = "";
 
 	//**constructors */
 	public Frame() {}
+	public Frame(byte opcode) {
+		this.fixedHeader.setOpcode(opcode);
+	}
 	public Frame(FrameFixedHeader fixedHeader, String varHeaders, String data) throws Exception {
 		if (fixedHeader.getVarsHeaderSize() != varHeaders.length() || fixedHeader.getDataSize() != data.length()) {
 			throw new Exception("var header size or data size is not valid");
@@ -23,7 +26,9 @@ public class Frame {
 	}
 	public Frame(byte opcode, String varHeaders, String data) {
 		try {
-			this.fixedHeader = new FrameFixedHeader((short)varHeaders.length(),opcode,(byte)0,data.length());
+			this.fixedHeader.setOpcode(opcode);
+			this.fixedHeader.setVarsHeaderSize((short)varHeaders.length());
+			this.data = data;
 		} catch (Exception e) {
 			System.out.println(e);
 		}
@@ -52,14 +57,25 @@ public class Frame {
 	}
 
 	//**get & set methods */
+	public FrameFixedHeader getFixedHeader() {
+		return fixedHeader;
+	}
 	public String getVarHeaders() {
 		return varHeaders;
 	}
 	public String getData() {
 		return data;
 	}
+	public int getFrameSize() {
+		int frameSize = Constants.FIXED_HEADER_SIZE + (int)fixedHeader.getVarsHeaderSize() + (int)fixedHeader.getDataSize();
+		return frameSize;
+	}
 	public void setVarHeaders(String varHeaders) {
 		this.varHeaders = varHeaders;
+		this.fixedHeader.setVarsHeaderSize((short)varHeaders.length());
+	}
+	public void setVarHeader(String key, String value) {
+		this.varHeaders = this.varHeaders.concat("\"" + key + "\"\"" + value + "\";");
 		this.fixedHeader.setVarsHeaderSize((short)varHeaders.length());
 	}
 	public void setData(String data) {
@@ -89,10 +105,14 @@ public class Frame {
 
 	//**transform methods */
 	public byte[] toByteArray() {
-		ByteBuffer buffer = ByteBuffer.allocate(Constants.FIXED_HEADER_SIZE + fixedHeader.getVarsHeaderSize() + fixedHeader.getDataSize());
+		int frameSize = getFrameSize();
+
+		ByteBuffer buffer = ByteBuffer.allocate(frameSize);
+
 		buffer.put(fixedHeader.toByteArray());
 		buffer.put(varHeaders.getBytes());
 		buffer.put(data.getBytes());
+
 		return buffer.array();
 	}
 }

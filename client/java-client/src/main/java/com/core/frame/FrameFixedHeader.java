@@ -13,12 +13,15 @@ public class FrameFixedHeader {
 	public static final int DATA_SIZE_OFFSET = 4;
 	
 	//**attributes */
-	private short varsHeaderSize;
+	private short varsHeaderSize = (short)0;
 	private byte opcode;
 	private byte flag = 00000000;
-	private int dataSize;
+	private int dataSize = 0;
 
 	//**constructors */
+	public FrameFixedHeader() {
+
+	}
 	public FrameFixedHeader(short varsHeaderSize, byte opcode, byte flag, int dataSize) throws Exception {
 		this.varsHeaderSize = varsHeaderSize;
 		this.opcode = opcode;
