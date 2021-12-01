@@ -10,7 +10,7 @@
 #include "util.h"
 
 bpsp__var_header* var_header__new(char* key, char* value) {
-    /* ASSERT_ARG(key, NULL); */
+    ASSERT_ARG(key, NULL);
     /* ASSERT_ARG(strlen(key), NULL); */
     /* ASSERT_ARG(value, NULL); */
 
@@ -401,6 +401,19 @@ status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__ui
     return s;
 }
 
+status__err frame__replace_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size) {
+    status__err s = BPSP_OK;
+
+    frame__free_payload(frame);
+
+    frame->pos = data_size;
+    frame->payload = payload;
+    frame->data_size = data_size;
+    frame->payload_size = data_size;
+
+    return s;
+}
+
 status__err frame__validate_var_headers(bpsp__frame* frame) {
     ASSERT_ARG(frame, BPSP_INVALID_ARG);
 
@@ -509,6 +522,7 @@ void frame__print(bpsp__frame* frame) {
         if (frame->data_size > 0) {
             char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
             mem__memcpy(payload, frame->payload, frame->data_size);
+            *(payload + frame->data_size) = '\0';
             printf("%s\n", payload);
             mem__free(payload);
         }

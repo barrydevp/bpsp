@@ -277,7 +277,7 @@ void topic__token_to_array(char* arr[], char* first_tok, int n_tok) {
     }
 }
 
-status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub) {
+status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub, uint8_t lock) {
     ASSERT_ARG(tree, BPSP_INVALID_ARG);
     ASSERT_ARG(sub, BPSP_INVALID_ARG);
     ASSERT_ARG(sub->_id, BPSP_INVALID_ARG);
@@ -291,9 +291,10 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
 
     ASSERT_BPSP_OK(s);
 
-    /* pthread_mutex_lock(&tree->mutex); */
-    int ok = pthread_rwlock_wrlock(&tree->rw_lock);
-    printf("%s, n_tok %d\n", topic, n_tok);
+    if (lock) {
+        /* pthread_mutex_lock(&tree->mutex); */
+        pthread_rwlock_wrlock(&tree->rw_lock);
+    }
 
     topic__node* cur_node = &tree->root;
 
@@ -340,7 +341,8 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
             if (!hsh) {
                 hsh = topic__new_hash_node(cur_tok);
                 if (!hsh) {
-                    break;
+                    s = BPSP_NO_MEMORY;
+                    goto RET_ERROR;
                 }
                 HASH_ADD_STR(cur_node->nodes, token, hsh);
 
@@ -364,15 +366,19 @@ status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub)
 
     mem__free(first_tok);
 
-    /* pthread_mutex_unlock(&tree->mutex); */
-    pthread_rwlock_unlock(&tree->rw_lock);
+    if (lock) {
+        /* pthread_mutex_unlock(&tree->mutex); */
+        pthread_rwlock_unlock(&tree->rw_lock);
+    }
 
     return s;
 RET_ERROR:
     mem__free(first_tok);
 
-    /* pthread_mutex_unlock(&tree->mutex); */
-    pthread_rwlock_unlock(&tree->rw_lock);
+    if (lock) {
+        /* pthread_mutex_unlock(&tree->mutex); */
+        pthread_rwlock_unlock(&tree->rw_lock);
+    }
 
     return s;
 }
@@ -490,16 +496,14 @@ status__err hash__subscriber_copy_to_array(UT_array* arr, subscriber__hash* subs
     HASH_ITER(hh, subs, _sub, tmp) {
         //
 
-        utarray_push_back(arr, _sub);
+        utarray_push_back(arr, _sub->sub);
     }
 
     return BPSP_OK;
 }
 
 UT_array* topic__node_find_subscribers(topic__node* node, char* first_tok, int n_tok) {
-    ASSERT_ARG(node, NULL);
-    ASSERT_ARG(first_tok, NULL);
-    ASSERT_ARG(n_tok >= 0, NULL);
+    ASSERT_ARG(node && first_tok && n_tok >= 0, NULL);
 
     UT_array* subs = NULL;
     utarray_new(subs, &bpsp__subscriber_icd);
@@ -564,8 +568,7 @@ UT_array* topic__node_find_subscribers(topic__node* node, char* first_tok, int n
 }
 
 UT_array* topic__tree_find_subscribers(bpsp__topic_tree* tree, char* topic, uint8_t lock) {
-    ASSERT_ARG(tree, NULL);
-    ASSERT_ARG(topic, NULL);
+    ASSERT_ARG(tree && topic, NULL);
 
     /* utarray_new(subs, &bpsp__subscriber_icd); */
 

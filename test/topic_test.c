@@ -1,8 +1,9 @@
+#include "topic.h"
+
 #include <assert.h>
 #include <stdio.h>
 
 #include "client.h"
-#include "topic.h"
 
 void find_sub(bpsp__topic_tree* tree, char* topic) {
     UT_array* subs = topic__tree_find_subscribers(tree, topic, 0);
@@ -37,21 +38,21 @@ int main() {
     /* s = topic__extract_token("foo/+/bar", &n_tok, &first_tok); */
     /* free(first_tok); */
 
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
 
     bpsp__client* client1 = client__new(NULL, NULL);
     bpsp__subscriber* sub1 = subscriber__new("locationA/sensorA/uptime", client1, NULL);
-    s = topic__add_subscriber(&tree, sub1);
+    s = topic__add_subscriber(&tree, sub1, 1);
     bpsp__client* client2 = client__new(NULL, NULL);
     bpsp__subscriber* sub2 = subscriber__new("locationA/sensorA/uptime", client2, NULL);
-    s = topic__add_subscriber(&tree, sub2);
+    s = topic__add_subscriber(&tree, sub2, 1);
     /* subscriber__free(sub1); */
 
     bpsp__subscriber* sub3 = subscriber__new("locationA/sensorA/downtime", client, NULL);
-    s = topic__add_subscriber(&tree, sub3);
+    s = topic__add_subscriber(&tree, sub3, 1);
 
     bpsp__subscriber* sub4 = subscriber__new("locationA/sensorA/uptime", client, NULL);
-    s = topic__add_subscriber(&tree, sub4);
+    s = topic__add_subscriber(&tree, sub4, 1);
     topic__print_tree(&tree);
     s = topic__del_subscriber(&tree, sub4, 1);
     topic__print_tree(&tree);
@@ -74,31 +75,31 @@ int main() {
     subscriber__free(sub);
 
     sub = subscriber__new("locationA/sensorA/+", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
     subscriber__free(sub);
 
     sub = subscriber__new("locationB/sensorB", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
     subscriber__free(sub);
 
     sub = subscriber__new("locationB/*/", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
     subscriber__free(sub);
 
     sub = subscriber__new("locationB/*/alo", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
     subscriber__free(sub);
 
     sub = subscriber__new("locationB/+/uptime", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
     subscriber__free(sub);
 
     sub = subscriber__new("locationA/+/uptime", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
     subscriber__free(sub);
 
     sub = subscriber__new("*+/locationA/+/uptime", client, NULL);
-    s = topic__add_subscriber(&tree, sub);
+    s = topic__add_subscriber(&tree, sub, 1);
     subscriber__free(sub);
 
     /* topic__print_tree(ptree); */

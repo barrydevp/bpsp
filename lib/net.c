@@ -127,7 +127,7 @@ bpsp__connection* net__connect(const char* host, uint16_t port) {
         return NULL;
     }
 
-    log__info("Connecting to broker %s:%d ...\n", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+    log__info("Connecting to broker %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     if (connect(conn->sockfd, (struct sockaddr*)conn->addr, sizeof(*(conn->addr))) < 0) {
         log__error("Cannot connect socket.");
@@ -162,7 +162,7 @@ bpsp__connection* net__listen(const char* host, uint16_t port) {
         goto RET_ERROR;
     }
 
-    log__info("Creating broker listen on %s:%d ...\n", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+    log__info("Creating broker listen on %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     socklen_t addr_len = sizeof(*(conn->addr));
 
@@ -182,7 +182,7 @@ bpsp__connection* net__listen(const char* host, uint16_t port) {
         goto RET_ERROR;
     }
 
-    log__info("Broker listening on %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+    log__info("Broker listening on %s:%d !\n", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     return conn;
 

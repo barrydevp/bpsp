@@ -76,7 +76,7 @@ status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
     status__err s = frame__empty(frame);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_PUB, 0);
+    s = frame__set_frame_control(frame, OP_PUB, flag);
     ASSERT_BPSP_OK(s);
 
     s = frame__set_var_headers(frame, headers, n_headers);
@@ -95,17 +95,21 @@ status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
 
 status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers_rule,
                        uint16_t n_headers) {
+    /* ASSERT_ARG(topic && strlen(topic), BPSP_INVALID_TOPIC); */
+
     status__err s = frame__empty(frame);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_SUB, 0);
+    s = frame__set_frame_control(frame, OP_SUB, flag);
     ASSERT_BPSP_OK(s);
 
     s = frame__set_var_headers(frame, headers_rule, n_headers);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_var_header(frame, "x-topic", topic);
-    ASSERT_BPSP_OK(s);
+    if (topic) {
+        s = frame__set_var_header(frame, "x-topic", topic);
+        ASSERT_BPSP_OK(s);
+    }
 
     s = frame__build(frame);
 
@@ -113,13 +117,29 @@ status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
 }
 
 status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag) {
+    /* ASSERT_ARG(topic && strlen(topic), BPSP_INVALID_TOPIC); */
+
     status__err s = frame__empty(frame);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_UNSUB, 0);
+    s = frame__set_frame_control(frame, OP_UNSUB, flag);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_var_header(frame, "x-topic", topic);
+    if (topic) {
+        s = frame__set_var_header(frame, "x-topic", topic);
+        ASSERT_BPSP_OK(s);
+    }
+
+    s = frame__build(frame);
+
+    return s;
+}
+
+status__err frame__MSG(bpsp__frame* frame, bpsp__frame* src) {
+    status__err s = frame__copy(frame, src, 0);
+    ASSERT_BPSP_OK(s);
+
+    s = frame__set_opcode(frame, OP_MSG);
     ASSERT_BPSP_OK(s);
 
     s = frame__build(frame);
@@ -127,33 +147,19 @@ status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag) {
     return s;
 }
 
-status__err frame__MSG(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
-                       uint16_t n_headers, bpsp__byte* msg, uint32_t size) {
+status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, char* msg) {
     status__err s = frame__empty(frame);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_MSG, 0);
+    s = frame__set_frame_control(frame, OP_OK, flag);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_var_header(frame, "x-topic", topic);
-    ASSERT_BPSP_OK(s);
+    if (!strlen(msg)) {
+        msg = "bpsp. Default OK";
+    }
 
-    s = frame__put_payload(frame, msg, size, 0);
-    ASSERT_BPSP_OK(s);
+    s = frame__put_payload(frame, (bpsp__byte*)msg, strlen(msg), 0);
 
-    s = frame__build(frame);
-
-    return s;
-}
-
-status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, bpsp__byte* msg, uint32_t size) {
-    status__err s = frame__empty(frame);
-    ASSERT_BPSP_OK(s);
-
-    s = frame__set_frame_control(frame, OP_OK, 0);
-    ASSERT_BPSP_OK(s);
-
-    s = frame__put_payload(frame, msg, size, 0);
     ASSERT_BPSP_OK(s);
 
     s = frame__build(frame);
@@ -165,16 +171,25 @@ status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, status__err s_err, 
     status__err s = frame__empty(frame);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_ERR, 0);
+    s = frame__set_frame_control(frame, OP_ERR, flag);
     ASSERT_BPSP_OK(s);
 
-    s = frame__put_payload(frame, (bpsp__byte*)ERR_TEXT(s_err), strlen(ERR_TEXT(s_err)), 0);
-    ASSERT_BPSP_OK(s);
+    const char* err_text = ERR_TEXT(s_err);
+    uint32_t err_len = strlen(err_text);
+    uint32_t msg_len = strlen(msg);
+    bpsp__byte* data = mem__malloc(sizeof(bpsp__byte) * (err_len + msg_len + 3));
 
-    if (msg && strlen(msg)) {
-        s = frame__put_payload(frame, (bpsp__byte*)msg, strlen(msg), 1);
-        ASSERT_BPSP_OK(s);
+    ASSERT_ARG(data, BPSP_NO_MEMORY);
+
+    *(data) = '(';
+    mem__memmove(data + 1, err_text, err_len);
+    mem__memmove(data + err_len + 1, ") ", 2);
+    if (msg_len) {
+        mem__memmove(data + err_len + 3, msg, msg_len);
     }
+
+    s = frame__replace_payload(frame, data, err_len + msg_len + 3);
+    ASSERT_BPSP_OK(s);
 
     s = frame__build(frame);
 

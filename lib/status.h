@@ -12,6 +12,8 @@
 
 #define IFN_OK(s) if (s != BPSP_OK)
 
+#define IF_OK(s) if (s == BPSP_OK)
+
 #if defined(DEBUG)
 #define ASSERT_BPSP_OK(s)        \
     IFN_OK(s) {                  \

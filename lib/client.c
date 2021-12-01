@@ -62,12 +62,17 @@ char* subscriber__gen_id(char* topic, bpsp__client* client) {
 char* subscriber__get_topic(bpsp__subscriber* sub) {
     ASSERT_ARG(sub, NULL);
 
-    return sub->_id + strlen(sub->client->_id) + 1;
+    return sub->_id + strlen(sub->client_id) + 1;
+}
+
+char* subscriber__get_client_id(bpsp__subscriber* sub) {
+    ASSERT_ARG(sub, NULL);
+
+    return sub->client_id;
 }
 
 bpsp__subscriber* subscriber__new(char* topic, bpsp__client* client, topic__node* node) {
-    ASSERT_ARG(topic, NULL);
-    ASSERT_ARG(client, NULL);
+    ASSERT_ARG(topic && client, NULL);
 
     bpsp__subscriber* sub = (bpsp__subscriber*)mem__malloc(sizeof(bpsp__subscriber));
 
@@ -78,7 +83,13 @@ bpsp__subscriber* subscriber__new(char* topic, bpsp__client* client, topic__node
     sub->_id = subscriber__gen_id(topic, client);
 
     if (!sub->_id) {
-        mem__free(sub);
+        subscriber__free(sub);
+        return NULL;
+    }
+
+    sub->client_id = mem__strdup(client->_id);
+    if (!sub->client_id) {
+        subscriber__free(sub);
         return NULL;
     }
 
@@ -96,6 +107,10 @@ void subscriber__copy(void* _dst, const void* _src) {
         dst->_id = mem__strdup(src->_id);
     }
 
+    if (src->client_id) {
+        dst->client_id = mem__strdup(src->client_id);
+    }
+
     dst->client = src->client;
     dst->node = src->node;
 }
@@ -109,6 +124,10 @@ void subscriber__dtor(void* _elt) {
 
     if (elt->_id) {
         mem__free(elt->_id);
+    }
+
+    if (elt->client_id) {
+        mem__free(elt->client_id);
     }
 }
 
@@ -174,32 +193,31 @@ void client__copy(void* _dst, const void* _src) {
     }
 
     if (src->conn) {
-        /* dst->conn = net__dup(src->conn); */
         dst->conn = src->conn;
     }
 }
 
 void client__unsub_all(bpsp__client* client, uint8_t lock) {
-    ASSERT_ARG(client, __EMPTY__);
-    ASSERT_ARG(client->broker, __EMPTY__);
+    ASSERT_ARG(client && client->subs && client->broker, __EMPTY__);
+    bpsp__broker* broker = client->broker;
 
     if (lock) {
         pthread_mutex_lock(&client->mutex);
         // grab tree lock for batch del_subscriber
-        pthread_rwlock_wrlock(&client->broker->topic_tree->rw_lock);
+        pthread_rwlock_wrlock(&broker->topic_tree->rw_lock);
     }
 
     subscriber__hash *_sub, *tmp;
     HASH_ITER(hh, client->subs, _sub, tmp) {
         HASH_DEL(client->subs, _sub);  // delete it (users advances to next)
-        topic__del_subscriber(client->broker->topic_tree, _sub->sub, 0);
-        subscriber__free_hash_elt(_sub);  // free it
+        broker__del_sub(broker, _sub->sub, 0);
         subscriber__free(_sub->sub);
+        subscriber__free_hash_elt(_sub);  // free it
     }
 
     if (lock) {
         // grab tree lock for batch del_subscriber
-        pthread_rwlock_unlock(&client->broker->topic_tree->rw_lock);
+        pthread_rwlock_unlock(&broker->topic_tree->rw_lock);
         pthread_mutex_unlock(&client->mutex);
     }
 
@@ -222,13 +240,16 @@ void client__dtor(void* _elt) {
     /* } */
 
     if (client->subs) {
-        subscriber__hash *_sub, *tmp;
-        HASH_ITER(hh, client->subs, _sub, tmp) {
-            HASH_DEL(client->subs, _sub);     // delete it (users advances to next)
-            subscriber__free_hash_elt(_sub);  // free it
-        }
-
-        HASH_CLEAR(hh, client->subs);
+        /*         subscriber__hash *_sub, *tmp; */
+        /*         HASH_ITER(hh, client->subs, _sub, tmp) { */
+        /*             HASH_DEL(client->subs, _sub);  // delete it (users advances to next) */
+        /*             topic__del_subscriber(client->broker->topic_tree, _sub->sub, 0); */
+        /*             subscriber__free(_sub->sub); */
+        /*             subscriber__free_hash_elt(_sub);  // free it */
+        /*         } */
+        /*  */
+        /*         HASH_CLEAR(hh, client->subs); */
+        client__unsub_all(client, 0);
     }
 
     if (client->in_frame) {
@@ -300,61 +321,84 @@ status__err client__destroy(bpsp__client* client) {
     return s;
 }
 
-status__err client__recv(bpsp__client* client) {
+status__err client__recv(bpsp__client* client, bpsp__frame* frame, uint8_t lock) {
     ASSERT_ARG(client, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
 
-    pthread_rwlock_rdlock(&client->rw_lock);
+    // if lock does not set, the caller must check client close
+    if (lock) {
+        pthread_rwlock_rdlock(&client->rw_lock);
 
-    if (client__is_close(client)) {
-        // client has close
+        if (client__is_close(client)) {
+            // client has close
+
+            pthread_rwlock_unlock(&client->rw_lock);
+            return BPSP_CONNECTION_CLOSED;
+        }
 
         pthread_rwlock_unlock(&client->rw_lock);
-        return BPSP_CONNECTION_CLOSED;
     }
 
-    pthread_rwlock_unlock(&client->rw_lock);
     /* pthread_mutex_unlock(&client->mutex); */
 
+    bpsp__connection* conn = client->conn;
+
     // TODO: grab lock for in_frame and conn.read
-    s = frame__recv(client->conn, client->in_frame);
+    s = frame__recv(conn, frame);
 
     /* pthread_mutex_unlock(&client->cli_mutex); */
+
+    ASSERT_BPSP_OK(s);
+
+    log__trace_in_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     return s;
 }
 
-status__err client__send(bpsp__client* client) {
+status__err client__send(bpsp__client* client, bpsp__frame* frame, uint8_t lock) {
     ASSERT_ARG(client, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
 
-    pthread_rwlock_rdlock(&client->rw_lock);
+    // if lock does not set, the caller must check client close
+    if (lock) {
+        pthread_rwlock_rdlock(&client->rw_lock);
 
-    if (client__is_close(client)) {
-        // client has close
+        if (client__is_close(client)) {
+            // client has close
+
+            pthread_rwlock_unlock(&client->rw_lock);
+            return BPSP_CONNECTION_CLOSED;
+        }
 
         pthread_rwlock_unlock(&client->rw_lock);
-        return BPSP_CONNECTION_CLOSED;
     }
-
-    pthread_rwlock_unlock(&client->rw_lock);
 
     // grab lock to write out_frame and net.write
     // TODO: should we use separated mutex?
-    pthread_mutex_lock(&client->mutex);
+    if (lock) {
+        pthread_mutex_lock(&client->mutex);
+    }
 
-    s = frame__send(client->conn, client->out_frame);
+    bpsp__connection* conn = client->conn;
 
-    pthread_mutex_unlock(&client->mutex);
+    s = frame__send(conn, frame);
+
+    if (lock) {
+        pthread_mutex_unlock(&client->mutex);
+    }
+
+    ASSERT_BPSP_OK(s);
+
+    log__trace_out_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
 
     return s;
 }
 
 status__err client__read(bpsp__client* client) {
     //
-    return client__recv(client);
+    return client__recv(client, client->in_frame, 1);
 }
 
 status__err client__write(bpsp__client* client, bpsp__frame* frame) {
@@ -378,6 +422,7 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
     pthread_mutex_lock(&client->mutex);
 
     s = frame__copy(client->out_frame, frame, 1);
+    ASSERT_BPSP_OK(s);
 
     IFN_OK(s) {
         pthread_mutex_unlock(&client->mutex);
@@ -385,7 +430,7 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
         return s;
     }
 
-    s = frame__send(client->conn, client->out_frame);
+    s = client__send(client, client->out_frame, 0);
 
     pthread_mutex_unlock(&client->mutex);
 
@@ -393,9 +438,8 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
 }
 
 status__err client__sub(bpsp__client* client, char* topic, uint8_t lock) {
-    ASSERT_ARG(client, BPSP_INVALID_ARG);
-    ASSERT_ARG(topic, BPSP_INVALID_TOPIC);
-    ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG);
+    ASSERT_ARG(client && topic && client->broker, BPSP_INVALID_ARG);
+    /* ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG); */
 
     status__err s = BPSP_OK;
 
@@ -420,16 +464,15 @@ status__err client__sub(bpsp__client* client, char* topic, uint8_t lock) {
     }
 
     if (sub) {
-        s = topic__add_subscriber(client->broker->topic_tree, sub);
+        s = broker__add_sub(client->broker, sub, lock);
     }
 
     return s;
 }
 
 status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
-    ASSERT_ARG(client, BPSP_INVALID_ARG);
-    ASSERT_ARG(topic, BPSP_INVALID_TOPIC);
-    ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG);
+    ASSERT_ARG(client && topic && client->broker, BPSP_INVALID_ARG);
+    /* ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG); */
 
     status__err s = BPSP_OK;
 
@@ -453,10 +496,9 @@ status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
     }
 
     if (sub) {
-        s = topic__del_subscriber(client->broker->topic_tree, sub, lock);
+        s = broker__del_sub(client->broker, sub, lock);
+        subscriber__free(sub);
     }
-
-    subscriber__free(sub);
 
     return s;
 }

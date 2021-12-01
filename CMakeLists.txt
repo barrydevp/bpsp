@@ -17,8 +17,8 @@ add_subdirectory(lib)
 add_subdirectory(test)
 
 # SOURCE
-file(GLOB SERVER_SRCS ${PROJECT_SOURCE_DIR}/server/*.c)
-file(GLOB CLIENT_SRCS ${PROJECT_SOURCE_DIR}/client/*.c)
+file(GLOB SERVER_SRC ${PROJECT_SOURCE_DIR}/server/*.c)
+file(GLOB TOOLS_SRC ${PROJECT_SOURCE_DIR}/tools/*.c)
 
 # LINK
 # link_directories(lib)
@@ -27,9 +27,9 @@ file(GLOB CLIENT_SRCS ${PROJECT_SOURCE_DIR}/client/*.c)
 # add_library(bpsp STATIC ${LIBS})
 
 # BUILD BIN
-add_executable(server ${SERVER_SRCS})
+add_executable(server ${SERVER_SRC})
 target_link_libraries(server bpsp)
 
-add_executable(client ${CLIENT_SRCS})
-target_link_libraries(client bpsp)
+add_executable(bpsp_tools ${TOOLS_SRC})
+target_link_libraries(bpsp_tools bpsp)
 

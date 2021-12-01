@@ -40,40 +40,6 @@ typedef struct {
     UT_hash_handle hh;
 } subscriber;
 
-void* server__handle_client(void* arg) {
-    bpsp__client* client = (bpsp__client*)arg;
-
-    pthread_t tid = pthread_self();
-    pthread_detach(tid);
-
-    status__err s = BPSP_OK;
-
-    ssize_t n_write = 0;
-    ssize_t n_read = 0;
-    bpsp__byte buf[100];
-
-    while (s == BPSP_OK) {
-        s = net__read(client->conn, buf, 100, &n_read, 0);
-
-        IFN_OK(s) {
-            perror("net_read()");
-            log__error("Fine");
-            break;
-        }
-
-        s = net__write(client->conn, "test", 4, &n_write, 1);
-
-        IFN_OK(s) {
-            perror("net__write()");
-            break;
-        }
-    }
-
-    client__free(client);
-
-    return NULL;
-}
-
 status__err echo(bpsp__connection* conn, bpsp__frame* frame) {
     status__err s = frame__send(conn, frame);
 
@@ -96,14 +62,13 @@ status__err echo(bpsp__connection* conn, bpsp__frame* frame) {
     return s;
 }
 
-void __loop(bpsp__connection* conn) {
+void __publish(bpsp__connection* conn) {
     if (!conn) {
         errno = EINVAL;
         pexit("__loop()");
     }
 
     status__err s = BPSP_OK;
-    pthread_t tid;
 
     bpsp__frame* out = frame__new();
 
@@ -112,52 +77,76 @@ void __loop(bpsp__connection* conn) {
     char* msg = "hello from server";
     char* topic = "locationA/sensorA";
     frame__CONNECT(out, (bpsp__byte*)msg, strlen(msg));
-    s = echo(conn, out);
+    s = frame__send(conn, out);
     frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
-    s = echo(conn, out);
+    s = frame__send(conn, out);
     frame__SUB(out, (char*)topic, 0, NULL, 0);
-    s = echo(conn, out);
+    s = frame__send(conn, out);
+    frame__SUB(out, NULL, 0, NULL, 0);
+    s = frame__send(conn, out);
+    frame__SUB(out, (char*)"locationA/*", 0, NULL, 0);
+    s = frame__send(conn, out);
+    frame__SUB(out, (char*)"locationA/+/alo", 0, NULL, 0);
+    s = frame__send(conn, out);
+    frame__SUB(out, (char*)"locationB/sensorB", 0, NULL, 0);
+    s = frame__send(conn, out);
+    frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
+    s = frame__send(conn, out);
     frame__UNSUB(out, (char*)topic, 0);
-    s = echo(conn, out);
-    frame__OK(out, 0, (bpsp__byte*)msg, strlen(msg));
-    s = echo(conn, out);
-    frame__ERR(out, 0, BPSP_TIMEOUT, msg);
-    s = echo(conn, out);
-    frame__ERR(out, 0, BPSP_DRAINING, NULL);
-    s = echo(conn, out);
-
-    /* int count = 0; */
-
-    /*     while (s == BPSP_OK && count < 100) { */
-    /*         s = frame__write(conn, out); */
-    /*  */
-    /*         IFN_OK(s) { */
-    /*             log__error("frame__write() %s", ERR_TEXT(s)); */
-    /*  */
-    /*             break; */
-    /*         } */
-    /*  */
-    /*         s = frame__read(conn, out); */
-    /*  */
-    /*         frame__set_opcode(out, count + 1); */
-    /*  */
-    /*         IFN_OK(s) { */
-    /*             log__error("frame__read() %s", ERR_TEXT(s)); */
-    /*  */
-    /*             break; */
-    /*         } */
-    /*  */
-    /*         frame__print(out); */
-    /*  */
-    /*         count++; */
-    /*  */
-    /* pthread_create(&tid, NULL, &server__handle_client, (void*)client); */
-    /*     } */
-
+    s = frame__send(conn, out);
+    frame__UNSUB(out, (char*)"locationA/+/alo", 0);
+    s = frame__send(conn, out);
+    frame__UNSUB(out, (char*)"locationB/sensorB", 0);
+    s = frame__send(conn, out);
+    frame__UNSUB(out, NULL, 0);
+    s = frame__send(conn, out);
+    frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
+    s = frame__send(conn, out);
+    /* s = echo(conn, out); */
+    /* frame__OK(out, 0, "Nhiet do: 100*C, do am: 30%"); */
+    /* s = echo(conn, out); */
+    /* frame__ERR(out, 0, BPSP_TIMEOUT, msg); */
+    /* s = echo(conn, out); */
+    /* frame__ERR(out, 0, BPSP_DRAINING, NULL); */
+    /* s = echo(conn, out); */
     frame__free(out);
 }
 
+void* __loop(void* arg) {
+    bpsp__connection* conn = (bpsp__connection*)arg;
+    if (!conn) {
+        errno = EINVAL;
+        pexit("__loop()");
+    }
+
+    status__err s = BPSP_OK;
+
+    bpsp__frame* in = frame__new();
+
+    while (s == BPSP_OK) {
+        s = frame__recv(conn, in);
+
+        IFN_OK(s) {
+            //
+            log__error("frame__read() %s", ERR_TEXT(s));
+            break;
+        }
+
+        if (in->opcode == OP_MSG) {
+            frame__print(in);
+        }
+    }
+
+    frame__free(in);
+
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
+    // setting logging
+    log__timestamps = 0;
+    log__stack_trace = 1;
+
     // declare socket attribute
     int listen_port = DEFAULT_PORT;
     const char* listen_addr = DEFAULT_ADDR;
@@ -180,8 +169,14 @@ int main(int argc, char* argv[]) {
     // connect
     bpsp__connection* connection = net__connect(listen_addr, (uint16_t)listen_port);
 
+    pthread_t tid;
     // loop
-    __loop(connection);
+    pthread_create(&tid, NULL, &__loop, (void*)connection);
+
+    // publish
+    __publish(connection);
+
+    pthread_join(tid, NULL);
 
     // destroy
     net__destroy(connection);

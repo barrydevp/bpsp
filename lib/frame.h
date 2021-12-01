@@ -80,6 +80,7 @@ status__err frame__set_flag(bpsp__frame* frame, bpsp__uint8 flag);
 status__err frame__set_frame_control(bpsp__frame* frame, bpsp__uint8 opcode, uint8_t flag);
 status__err frame__malloc_payload(bpsp__frame* frame, bpsp__uint32 data_size);
 status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size, bpsp__uint8 append);
+status__err frame__replace_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size);
 status__err frame__is_completed(bpsp__frame* frame);
 status__err frame__build(bpsp__frame* frame);
 status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build);
@@ -102,9 +103,8 @@ status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
 status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers_rule,
                        uint16_t n_headers);
 status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag);
-status__err frame__MSG(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
-                       uint16_t n_headers, bpsp__byte* msg, uint32_t size);
-status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, bpsp__byte* msg, uint32_t size);
+status__err frame__MSG(bpsp__frame* frame, bpsp__frame* src);
+status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, char* msg);
 status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, status__err s_err, char* msg);
 
 /** test **/

@@ -11,9 +11,9 @@
 #include "bpsp.h"
 #include "broker.h"
 #include "client.h"
+#include "handle.h"
 #include "log.h"
 #include "status.h"
-#include "handle.h"
 
 #define DEFAULT_PORT 29010
 /* #define DEFAULT_ADDR "127.0.0.1" */
@@ -26,7 +26,6 @@ int pexit(const char* str) {
     perror(str);
     exit(1);
 }
-
 
 void server__loop() {
     if (!broker) {
@@ -46,6 +45,10 @@ void server__loop() {
 }
 
 int main(int argc, char* argv[]) {
+    // setting logging
+    log__timestamps = 0;
+    log__stack_trace = 1;
+
     // declare socket attribute
     int listen_port = DEFAULT_PORT;
     const char* listen_addr = DEFAULT_ADDR;
