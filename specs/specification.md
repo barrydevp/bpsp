@@ -114,6 +114,124 @@ The sequence of bytes represent the data of the frame, you can use variable head
 </tbody>
 </table>
 
+## Flag
+
+             FLAG BIT
+     +--+--+--+--+--+--+--+--+
+     |1 |2 |3 |4 |5 |6 |7 |8 |
+     +--+--+--+--+--+--+--+--+
+
+<table>
+<thead><tr><th>Flag bit</th><th>Opcode</th><th>Name</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td><tr>
+    <td>ALL</td>
+  </tr></td>
+  <td><tr>
+    <td>ACK</td>
+  </tr></td>
+  <td><tr>
+    <td>Determine whether or not server need reply (acknowledge) to this request.</td>
+  </tr></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><tr>
+    <td>PUB</td>
+    <td>Other</td>
+  </tr></td>
+  <td><tr>
+    <td>ECHO</td>
+    <td>(Reserved)</td>
+  </tr></td>
+  <td><tr>
+    <td>Determine whether or not server will echo this published message back to this client if it's subscriber was matched.</td>
+    <td>(Reserved)</td>
+  </tr></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><tr>
+    <td>Other</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><tr>
+    <td>Other</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><tr>
+    <td>Other</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><tr>
+    <td>Other</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><tr>
+    <td>Other</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><tr>
+    <td>Other</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+  <td><tr>
+    <td>(Reserved)</td>
+  </tr></td>
+</tr>
+</tbody>
+</table>
+
+# BPSP Behavior
+
+## Message Diagram Flow Chart
+
+![Diagram Flow](./message-flow.png)
+
 # Topics
 
 ## Format
@@ -209,4 +327,3 @@ Print Tree for theres topic `locationA/sensorA/*`, `locationA/sensorA/uptime`, `
    │   │   │─ uptime (1)
    │   │─ sensorB (1)
 ```
-

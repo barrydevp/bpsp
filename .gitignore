@@ -53,3 +53,5 @@ dkms.conf
 
 build
 build_test
+
+.DS_Store
