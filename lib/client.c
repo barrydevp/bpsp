@@ -351,7 +351,7 @@ status__err client__recv(bpsp__client* client, bpsp__frame* frame, uint8_t lock)
 
     ASSERT_BPSP_OK(s);
 
-    log__trace_in_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+    log__trace_in(client, frame);
 
     return s;
 }
@@ -391,7 +391,7 @@ status__err client__send(bpsp__client* client, bpsp__frame* frame, uint8_t lock)
 
     ASSERT_BPSP_OK(s);
 
-    log__trace_out_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+    log__trace_out(client, frame);
 
     return s;
 }

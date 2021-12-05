@@ -100,7 +100,7 @@ void __publish(bpsp__connection* conn) {
     s = frame__send(conn, out);
     frame__UNSUB(out, NULL, 0);
     s = frame__send(conn, out);
-    frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
+    frame__PUB(out, (char*)topic, FL_ACK | FL_PUB_ECHO, NULL, 0, (bpsp__byte*)msg, strlen(msg));
     s = frame__send(conn, out);
     /* s = echo(conn, out); */
     /* frame__OK(out, 0, "Nhiet do: 100*C, do am: 30%"); */
@@ -132,9 +132,9 @@ void* __loop(void* arg) {
             break;
         }
 
-        if (in->opcode == OP_MSG) {
+        /* if (in->opcode == OP_MSG) { */
             frame__print(in);
-        }
+        /* } */
     }
 
     frame__free(in);

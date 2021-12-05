@@ -27,6 +27,11 @@ typedef enum {
     OP_ERR,
 } bpsp__opcode;
 
+typedef enum {
+    FL_ACK = 0x80,
+    FL_PUB_ECHO = 0x40,
+} bpsp__flag;
+
 #define OP_TEXT(o) frame__get_op_text(o)
 
 typedef char** bpsp__var_header_pair;  // must be char[2]
@@ -83,6 +88,8 @@ status__err frame__put_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__ui
 status__err frame__replace_payload(bpsp__frame* frame, bpsp__byte* payload, bpsp__uint32 data_size);
 status__err frame__is_completed(bpsp__frame* frame);
 status__err frame__build(bpsp__frame* frame);
+status__err frame__copy_var_headers(bpsp__frame* dst, bpsp__frame* src);
+status__err frame__copy_header(bpsp__frame* dst, bpsp__frame* src);
 status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build);
 bpsp__frame* frame__dup(bpsp__frame* src, uint8_t build);
 void frame__print(bpsp__frame* frame);
@@ -94,8 +101,12 @@ status__err frame__recv(bpsp__connection* conn, bpsp__frame* frame);
 /** write **/
 status__err frame__send(bpsp__connection* conn, bpsp__frame* frame);
 
+/** FLAG **/
+static inline uint8_t flag__is_set(bpsp__flag flag, bpsp__flag flags_set) { return flag & flags_set; };
+
 /** frame op **/
 const char* frame__get_op_text(bpsp__opcode op);
+
 status__err frame__INFO(bpsp__frame* frame, bpsp__broker* broker);
 status__err frame__CONNECT(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
 status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
@@ -104,8 +115,8 @@ status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
                        uint16_t n_headers);
 status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag);
 status__err frame__MSG(bpsp__frame* frame, bpsp__frame* src);
-status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, char* msg);
-status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, status__err s_err, char* msg);
+status__err frame__OK(bpsp__frame* frame, bpsp__frame* src, char* msg);
+status__err frame__ERR(bpsp__frame* frame, bpsp__frame* src, status__err s_err, char* msg);
 
 /** test **/
 status__err frame__parse_var_header(bpsp__frame* frame, bpsp__byte* buf, bpsp__uint16 size);

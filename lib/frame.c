@@ -460,17 +460,8 @@ RET_ERROR:
     return s;
 }
 
-status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build) {
-    ASSERT_ARG(dst, BPSP_INVALID_ARG);
-    ASSERT_ARG(src, BPSP_INVALID_ARG);
-    ASSERT_ARG(frame__is_completed(src) == BPSP_OK, BPSP_INVALID_ARG);
-
-    status__err s = frame__empty(dst);
-    ASSERT_BPSP_OK(s);
-
-    s = frame__set_frame_control(dst, src->opcode, src->flag);
-    ASSERT_BPSP_OK(s);
-
+status__err frame__copy_var_headers(bpsp__frame* dst, bpsp__frame* src) {
+    status__err s = BPSP_OK;
     // copy var_headers
     bpsp__var_header *var_header, *tmp;
     HASH_ITER(hh, src->var_headers, var_header, tmp) {
@@ -478,6 +469,29 @@ status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build) {
         s = frame__set_var_header(dst, var_header->key, var_header->value);
         ASSERT_BPSP_OK(s);
     }
+
+    return s;
+}
+
+status__err frame__copy_header(bpsp__frame* dst, bpsp__frame* src) {
+    status__err s = BPSP_OK;
+    s = frame__set_frame_control(dst, src->opcode, src->flag);
+    ASSERT_BPSP_OK(s);
+
+    s = frame__copy_var_headers(dst, src);
+    ASSERT_BPSP_OK(s);
+
+    return s;
+}
+
+status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build) {
+    ASSERT_ARG(dst && src && frame__is_completed(src) == BPSP_OK, BPSP_INVALID_ARG);
+
+    status__err s = frame__empty(dst);
+    ASSERT_BPSP_OK(s);
+
+    s = frame__copy_header(dst, src);
+    ASSERT_BPSP_OK(s);
 
     // copy data
     s = frame__put_payload(dst, src->payload, src->payload_size, 0);

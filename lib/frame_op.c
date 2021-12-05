@@ -147,19 +147,28 @@ status__err frame__MSG(bpsp__frame* frame, bpsp__frame* src) {
     return s;
 }
 
-status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, char* msg) {
-    status__err s = frame__empty(frame);
+status__err frame__OK(bpsp__frame* frame, bpsp__frame* src, char* msg) {
+    status__err s = BPSP_OK;
+
+    s = frame__empty(frame);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_OK, flag);
+    if (src) {
+        s = frame__copy_header(frame, src);
+        ASSERT_BPSP_OK(s);
+    }
+
+    s = frame__set_opcode(frame, OP_OK);
     ASSERT_BPSP_OK(s);
 
     if (!strlen(msg)) {
-        msg = "bpsp. Default OK";
+        msg = "OK.";
     }
 
     s = frame__put_payload(frame, (bpsp__byte*)msg, strlen(msg), 0);
+    ASSERT_BPSP_OK(s);
 
+    s = frame__set_var_header(frame, "x-status-code", "200");
     ASSERT_BPSP_OK(s);
 
     s = frame__build(frame);
@@ -167,12 +176,23 @@ status__err frame__OK(bpsp__frame* frame, bpsp__uint8 flag, char* msg) {
     return s;
 }
 
-status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, status__err s_err, char* msg) {
-    status__err s = frame__empty(frame);
+status__err frame__ERR(bpsp__frame* frame, bpsp__frame* src, status__err s_err, char* msg) {
+    status__err s = BPSP_OK;
+
+    s = frame__empty(frame);
     ASSERT_BPSP_OK(s);
 
-    s = frame__set_frame_control(frame, OP_ERR, flag);
+    if (src) {
+        s = frame__copy_header(frame, src);
+        ASSERT_BPSP_OK(s);
+    }
+
+    s = frame__set_opcode(frame, OP_ERR);
     ASSERT_BPSP_OK(s);
+
+    if (!strlen(msg)) {
+        msg = "OK.";
+    }
 
     const char* err_text = ERR_TEXT(s_err);
     uint32_t err_len = strlen(err_text);
@@ -189,6 +209,9 @@ status__err frame__ERR(bpsp__frame* frame, bpsp__uint8 flag, status__err s_err, 
     }
 
     s = frame__replace_payload(frame, data, err_len + msg_len + 3);
+    ASSERT_BPSP_OK(s);
+
+    s = frame__set_var_header(frame, "x-status-code", "500");
     ASSERT_BPSP_OK(s);
 
     s = frame__build(frame);
