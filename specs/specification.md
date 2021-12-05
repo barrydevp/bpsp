@@ -125,103 +125,57 @@ The sequence of bytes represent the data of the frame, you can use variable head
 <thead><tr><th>Flag bit</th><th>Opcode</th><th>Name</th><th>Description</th></tr></thead>
 <tbody>
 <tr>
-  <td>1</td>
-  <td><tr>
-    <td>ALL</td>
-  </tr></td>
-  <td><tr>
-    <td>ACK</td>
-  </tr></td>
-  <td><tr>
-    <td>Determine whether or not server need reply (acknowledge) to this request.</td>
-  </tr></td>
+  <td rowspan="1">1</td>
+  <td>ALL</td>
+  <td>ACK</td>
+  <td>Determine whether or not server need reply (acknowledge) to this request.</td>
 </tr>
 <tr>
-  <td>2</td>
-  <td><tr>
-    <td>PUB</td>
-    <td>Other</td>
-  </tr></td>
-  <td><tr>
-    <td>ECHO</td>
-    <td>(Reserved)</td>
-  </tr></td>
-  <td><tr>
-    <td>Determine whether or not server will echo this published message back to this client if it's subscriber was matched.</td>
-    <td>(Reserved)</td>
-  </tr></td>
+  <td rowspan="2">2</td>
+  <td>PUB</td>
+  <td>ECHO</td>
+  <td>Determine whether or not server will echo this published message back to this client if it's subscriber was matched.</td>
 </tr>
 <tr>
-  <td>3</td>
-  <td><tr>
-    <td>Other</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
+  <td>Other</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
 </tr>
 <tr>
-  <td>4</td>
-  <td><tr>
-    <td>Other</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
+  <td rowspan="1">3</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
 </tr>
 <tr>
-  <td>5</td>
-  <td><tr>
-    <td>Other</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
+  <td rowspan="1">4</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
 </tr>
 <tr>
-  <td>6</td>
-  <td><tr>
-    <td>Other</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
+  <td rowspan="1">5</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
 </tr>
 <tr>
-  <td>7</td>
-  <td><tr>
-    <td>Other</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
+  <td rowspan="1">6</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
 </tr>
 <tr>
-  <td>8</td>
-  <td><tr>
-    <td>Other</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
-  <td><tr>
-    <td>(Reserved)</td>
-  </tr></td>
+  <td rowspan="1">7</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+<tr>
+  <td rowspan="1">8</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
 </tr>
 </tbody>
 </table>
