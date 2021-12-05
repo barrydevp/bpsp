@@ -1,5 +1,3 @@
-#include "client.h"
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <pthread.h>
@@ -11,6 +9,7 @@
 #include <unistd.h>
 
 #include "broker.h"
+#include "client.h"
 #include "log.h"
 #include "mem.h"
 #include "status.h"
@@ -133,13 +132,30 @@ void* __loop(void* arg) {
         }
 
         /* if (in->opcode == OP_MSG) { */
-            frame__print(in);
+        frame__print(in);
         /* } */
     }
 
     frame__free(in);
 
     return 0;
+}
+
+static void usage() {
+    printf(
+        "Usage: bpsp <options> command [arguments...]           \n"
+        "  command:                                             \n"
+        "    sub <topics...>            Subscribe on topics     \n"
+        "    pub <topics...>            Publish on topics       \n"
+        "                                                       \n"
+        "  options:                                             \n"
+        "    -h, --host             Broker host address         \n"
+        "    -p, --port             Broker port address         \n"
+        "    -v, --version          Print version details       \n"
+        "    -h, --help             Print usage                 \n"
+        "                                                       \n"
+        "  Basic Publish Subscribe Protocol CLI Tools           \n"
+        "  Written by barrydevp(barrydevp@gmail.com)            \n");
 }
 
 int main(int argc, char* argv[]) {
