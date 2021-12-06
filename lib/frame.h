@@ -76,6 +76,7 @@ bpsp__frame* frame__realloc(bpsp__frame* frame);
 void frame__free(bpsp__frame* frame);
 bpsp__frame* frame__new();
 status__err frame__empty(bpsp__frame* frame);
+bpsp__var_header* frame__get_var_header(bpsp__frame* frame, char* key);
 status__err frame__set_var_header(bpsp__frame* frame, char* key, char* value);
 status__err frame__set_var_header2(bpsp__frame* frame, bpsp__var_header_pair pair);
 status__err frame__set_var_headers(bpsp__frame* frame, bpsp__var_header_pair* headers, uint16_t n_headers);

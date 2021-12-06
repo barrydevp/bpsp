@@ -175,14 +175,24 @@ status__err frame__empty(bpsp__frame* frame) {
     return s;
 }
 
+bpsp__var_header* frame__get_var_header(bpsp__frame* frame, char* key) {
+    if (!(frame && key)) {
+        return NULL;
+    }
+
+    bpsp__var_header* hdr = NULL;
+
+    HASH_FIND_STR(frame->var_headers, key, hdr);
+
+    return hdr;
+}
+
 status__err frame__set_var_header(bpsp__frame* frame, char* key, char* value) {
-    ASSERT_ARG(key, BPSP_INVALID_ARG);
-    ASSERT_ARG(strlen(key), BPSP_INVALID_ARG);
+    ASSERT_ARG(frame && key && strlen(key), BPSP_INVALID_ARG);
+    /* ASSERT_ARG(strlen(key), BPSP_INVALID_ARG); */
     /* ASSERT_ARG(value, NULL); */
 
     status__err s = BPSP_OK;
-
-    ASSERT_ARG(frame, BPSP_INVALID_ARG);
 
     bpsp__uint16 key_len = strlen(key);
     bpsp__uint16 value_len = strlen(value);
