@@ -31,7 +31,7 @@ Broker 1.0.0BPSP - Basic Publish Subscribe Broker
 Subscribing on locationA/sensorA .
 127.0.0.1:33912 ->> "locationA/sensorA" Received 11 bytes : hello there
 
-# bpsp pub locationA/sensorA
+$ bpsp pub locationA/sensorA
 
 Broker 1.0.0BPSP - Basic Publish Subscribe Broker
 
