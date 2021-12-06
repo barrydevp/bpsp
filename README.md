@@ -1,12 +1,45 @@
 Basic Publish Subscribe Protocol (BPSP)
 =================
 
-BPSP is light weight publish subscribe protocol. The project contain the [specification](https://github.com/barrydevp/bpsp/blob/master/specs/specification.md)
+BPSP is light weight publish subscribe protocol. The project contain the [specification](https://github.com/barrydevp/bpsp/specs/specification.md)
 and the source code implementation of a client-server for version 1.0.
 
 ## Installing
 
 ## Quick start
+
+After install the binary broker server, it can be started with basic configuration:
+
+```
+$ bpsp_server
+
+  INFO] Creating broker listen on 0.0.0.0:29010
+  INFO] Binding...
+  INFO] Listen...
+  INFO] Broker listening on 0.0.0.0:29010 !
+
+```
+
+The borker will listen on all available network interfaces on your machine.
+Then use [bpsp cli tool](https://github.com/barrydevp/bpsp/tools/README.md) to interacting with broker:
+
+```
+$ bpsp sub locationA/sensorA
+
+Broker 1.0.0BPSP - Basic Publish Subscribe Broker
+
+Subscribing on locationA/sensorA .
+127.0.0.1:33912 ->> "locationA/sensorA" Received 11 bytes : hello there
+
+# bpsp pub locationA/sensorA
+
+Broker 1.0.0BPSP - Basic Publish Subscribe Broker
+
+enter: hello there
+Published 11 bytes to "locationA/sensorA" .
+enter:
+
+```
 
 ## Documentation
 

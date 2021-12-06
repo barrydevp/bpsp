@@ -260,7 +260,8 @@ void handle_pub() {
 
         int argi = 0;
         while (argi < cmd.argc) {
-            s = frame__PUB(out, cmd.argv[argi++], FL_ACK, NULL, 0, (bpsp__byte*)buffer, strlen(buffer));
+            char* topic = cmd.argv[argi++];
+            s = frame__PUB(out, topic, FL_ACK, NULL, 0, (bpsp__byte*)buffer, strlen(buffer));
 
             IFN_OK(s) {
                 //
@@ -286,6 +287,8 @@ void handle_pub() {
                 fprintf(stderr, "%s\n", ERR_TEXT(s));
                 break;
             }
+
+            printf("Published %u bytes to \"%s\" .\n", out->data_size, topic);
         }
     }
 
@@ -311,7 +314,8 @@ void handle_sub() {
 
     int argi = 0;
     while (argi < cmd.argc) {
-        s = frame__SUB(out, cmd.argv[argi++], FL_ACK, NULL, 0);
+        char* topic = cmd.argv[argi++];
+        s = frame__SUB(out, topic, FL_ACK, NULL, 0);
 
         IFN_OK(s) {
             //
@@ -337,6 +341,8 @@ void handle_sub() {
             fprintf(stderr, "Cannot subscribe %s\n", ERR_TEXT(s));
             break;
         }
+
+        printf("Subscribing on %s .\n", topic);
     }
 
     while (s == BPSP_OK) {
@@ -358,7 +364,7 @@ void handle_sub() {
         }
         buffer[in->data_size] = '\0';
 
-        printf("%s ->> %s : %s\n", from, topic, buffer);
+        printf("%s ->> \"%s\" Received %u bytes : %s\n", from, topic, in->data_size, buffer);
     }
 
     frame__free(in);
