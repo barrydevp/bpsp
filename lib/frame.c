@@ -452,6 +452,14 @@ status__err frame__is_completed(bpsp__frame* frame) {
 status__err frame__build(bpsp__frame* frame) {
     status__err s = BPSP_OK;
 
+    char date_now[30];
+
+    date_now_utc(date_now, 30);
+
+    s = frame__set_var_header(frame, "x-time", date_now);
+
+    IFN_OK(s) { goto RET_ERROR; }
+
     s = frame__validate_opcode(frame->opcode);
     /* ASSERT_BPSP_OK(s); */
     IFN_OK(s) { goto RET_ERROR; }

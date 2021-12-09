@@ -20,3 +20,7 @@ add_test(topic topic_test)
 add_executable(client_test client_test.c)
 target_link_libraries(client_test libbpsp)
 add_test(client client_test)
+
+add_executable(util_test util_test.c)
+target_link_libraries(util_test libbpsp)
+add_test(util util_test)
