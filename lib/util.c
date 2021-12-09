@@ -20,7 +20,7 @@ void date_now_utc(char* str, size_t len) {
 
     time(&rawtime);
 
-    // FIXME: add exact time in miliseconds instead of .000Z
-    strftime(str, len, "%Y-%m-%dT%H:%M:%S.000Z", gmtime(&rawtime));
+    // FIXME: add exact time in miliseconds instead of .000000Z
+    strftime(str, len, "%Y-%m-%dT%H:%M:%S.000000Z", gmtime(&rawtime));
     /* printf("%s.%03ldZ", date, tv.tv_usec / 1000); */
 }
