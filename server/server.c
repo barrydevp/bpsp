@@ -15,6 +15,10 @@
 #include "log.h"
 #include "status.h"
 
+#ifdef TRACE_ALL
+#define TRACE_ALL
+#endif
+
 #define DEFAULT_PORT 29010
 /* #define DEFAULT_ADDR "127.0.0.1" */
 #define DEFAULT_ADDR "0.0.0.0"

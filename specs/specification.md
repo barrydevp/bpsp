@@ -103,16 +103,128 @@ The sequence of bytes represent the data of the frame, you can use variable head
 <table>
 <thead><tr><th>Opcode</th><th>Value</th><th>Sent By</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td>INFO</td><td>1</td><td>Server</td><td>Sent to client after initial TCP connection to inform about server.</td></tr>
-<tr><td>CONNECT</td><td>2</td><td>Client</td><td>Sent to server to specify connection information after received INFO.</td></tr>
-<tr><td>PUB</td><td>3</td><td>Client</td><td>Publish a message to a topic.</td></tr>
-<tr><td>SUB</td><td>4</td><td>Client</td><td>Subscribe to a topic.</td></tr>
-<tr><td>UNSUB</td><td>5</td><td>Client</td><td>Unsubscribe to a topic.</td></tr>
-<tr><td>MSG</td><td>6</td><td>Server</td><td>Delivers a message to responsible subscriber.</td></tr>
-<tr><td>+OK</td><td>7</td><td>Server</td><td>Positive acknowledges.</td></tr>
-<tr><td>-ERR</td><td>8</td><td>Server</td><td>Negative acfknowledges may cause client to disconnect.</td></tr>
+<tr>
+  <td>INFO</td>
+  <td>1</td>
+  <td>Server</td>
+  <td>Sent to client after initial TCP connection to inform about server.</td>
+</tr>
+<tr>
+	<td>CONNECT</td>
+	<td>2</td>
+	<td>Client</td>
+	<td>Sent to server to specify connection information after received INFO.</td>
+</tr>
+<tr>
+	<td>PUB</td>
+	<td>3</td>
+	<td>Client</td>
+	<td>Publish a message to a topic.</td>
+</tr>
+<tr>
+	<td>SUB</td>
+	<td>4</td>
+	<td>Client</td>
+	<td>Subscribe to a topic.</td>
+</tr>
+<tr>
+	<td>UNSUB</td>
+	<td>5</td>
+	<td>Client</td>
+	<td>Unsubscribe to a topic.</td>
+</tr>
+<tr>
+	<td>MSG</td>
+	<td>6</td>
+	<td>Server</td>
+	<td>Delivers a message to responsible subscriber.</td>
+</tr>
+<tr>
+	<td>+OK</td>
+	<td>7</td>
+	<td>Server</td>
+	<td>Positive acknowledges.</td>
+</tr>
+<tr>
+	<td>-ERR</td>
+	<td>8</td>
+	<td>Server</td>
+	<td>Negative acfknowledges may cause client to disconnect.</td>
+</tr>
 </tbody>
 </table>
+
+## Flag
+
+                      FLAG BIT
+              +--+--+--+--+--+--+--+--+
+              |1 |2 |3 |4 |5 |6 |7 |8 |
+              +--+--+--+--+--+--+--+--+
+
+<table>
+<thead><tr><th>Flag bit</th><th>Opcode</th><th>Name</th><th>Description</th></tr></thead>
+<tbody>
+<tr>
+  <td rowspan="1">1</td>
+  <td>ALL</td>
+  <td>ACK</td>
+  <td>Determine whether or not server need reply (acknowledge) to this request.</td>
+</tr>
+<tr>
+  <td rowspan="2">2</td>
+  <td>PUB</td>
+  <td>ECHO</td>
+  <td>Determine whether or not server will echo this published message back to this client if it's subscriber was matched.</td>
+</tr>
+<tr>
+  <td>Other</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+<tr>
+  <td rowspan="1">3</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+<tr>
+  <td rowspan="1">4</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+<tr>
+  <td rowspan="1">5</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+<tr>
+  <td rowspan="1">6</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+<tr>
+  <td rowspan="1">7</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+<tr>
+  <td rowspan="1">8</td>
+  <td>ALL</td>
+  <td>(Reserved)</td>
+  <td>(Reserved)</td>
+</tr>
+</tbody>
+</table>
+
+# BPSP Behavior
+
+## Message Diagram Flow Chart
+
+![Diagram Flow](./message-flow.png)
 
 # Topics
 
@@ -160,10 +272,10 @@ For example, the structure of Node Tree in Pseudocode and how theres topic `loca
  *
  */
 struct topic__node {
-    bpsp__subscriber* subs;     // all subscribers match until end current token
+    bpsp__subscriber[] subs;     // all subscribers match until end current token
 
-    topic__node* sl_node;  // single-level node
-    topic__node* ml_node;  // multi-level node
+    topic__node sl_node;  // single-level node
+    topic__node ml_node;  // multi-level node
 
     /** node hash table **/
     topic__hash_node [string]nodes;
@@ -209,4 +321,3 @@ Print Tree for theres topic `locationA/sensorA/*`, `locationA/sensorA/uptime`, `
    │   │   │─ uptime (1)
    │   │─ sensorB (1)
 ```
-

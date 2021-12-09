@@ -15,5 +15,5 @@ set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/deps ${PROJECT_SOURCE_DIR}/lib)
 file(GLOB LIBS ${PROJECT_SOURCE_DIR}/lib/*.c)
 
 # BUILD LIB
-add_library(bpsp STATIC ${LIBS})
-target_include_directories(bpsp PUBLIC ${INCLUDE_DIR})
+add_library(libbpsp STATIC ${LIBS})
+target_include_directories(libbpsp PUBLIC ${INCLUDE_DIR})

@@ -10,13 +10,17 @@ include(CPack)
 
 # TEST SUITE
 add_executable(frame_test frame_test.c)
-target_link_libraries(frame_test bpsp)
+target_link_libraries(frame_test libbpsp)
 add_test(frame frame_test)
 
 add_executable(topic_test topic_test.c)
-target_link_libraries(topic_test bpsp)
+target_link_libraries(topic_test libbpsp)
 add_test(topic topic_test)
 
 add_executable(client_test client_test.c)
-target_link_libraries(client_test bpsp)
+target_link_libraries(client_test libbpsp)
 add_test(client client_test)
+
+add_executable(util_test util_test.c)
+target_link_libraries(util_test libbpsp)
+add_test(util util_test)

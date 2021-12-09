@@ -7,10 +7,34 @@
 #include "bpsp.h"
 #include "broker.h"
 #include "client.h"
+#include "frame.h"
 #include "log.h"
 #include "status.h"
 #include "utarray.h"
 #include "uthash.h"
+
+status__err handle__reply(bpsp__client* client, bpsp__frame* in, status__err s, char* msg) {
+    if (flag__is_set(in->flag, FL_ACK)) {
+        IFN_OK(s) {
+            //
+            s = frame__ERR(client->out_frame, in, s, msg);
+        }
+        else {
+            //
+            s = frame__OK(client->out_frame, in, msg);
+        }
+
+        ASSERT_BPSP_OK(s);
+
+        s = client__send(client, client->out_frame, 1);
+
+    } else {
+        // reset ok
+        s = BPSP_OK;
+    }
+
+    return s;
+}
 
 status__err handle__ECHO(bpsp__client* client) {
     status__err s = BPSP_OK;
@@ -49,6 +73,8 @@ status__err handle__PUB(bpsp__client* client) {
 
     bpsp__var_header* topic_hdr = NULL;
 
+    char* msg = "PUB OK.";
+
     HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
 
     if (topic_hdr) {
@@ -63,15 +89,23 @@ status__err handle__PUB(bpsp__client* client) {
 
             IF_OK(s) {
                 for (; p != NULL; p = (bpsp__subscriber*)utarray_next(subs, p)) {
-                    printf("%s - %s", p->_id, p->client_id);
-                    s = broker__deliver_msg(client, p, deliver_frame);
-                    IFN_OK(s) {
-                        //
-                        break;
+                    // avoid echo when echo is not set
+                    if (p->client == client && !flag__is_set(in->flag, FL_PUB_ECHO)) {
+                        continue;
                     }
+
+                    printf("%s", p->_id);
+                    s = broker__deliver_msg(client, p, deliver_frame);
+                    // TODO: inspect error to determine if we can continue deliver msg or not.
+                    /* IFN_OK(s) { */
+                    /*     // */
+                    /*     break; */
+                    /* } */
                 }
 
                 frame__free(deliver_frame);
+                // reset status
+                s = BPSP_OK;
             }
         }
 
@@ -81,19 +115,17 @@ status__err handle__PUB(bpsp__client* client) {
 
         IFN_OK(s) {
             //
-            s = frame__ERR(client->out_frame, 0, s, "Deliver msg fail.");
-        }
-        else {
-            s = frame__OK(client->out_frame, 0, "PUB OK. Deliver to %d subscriber");
+            msg = "Deliver msg fail.";
         }
 
     } else {
-        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+        s = BPSP_INVALID_TOPIC;
+        msg = "Missing header `x-topic`.";
     }
 
     ASSERT_BPSP_OK(s);
 
-    s = client__send(client, client->out_frame, 1);
+    s = handle__reply(client, in, s, msg);
 
     IFN_OK(s) {
         perror("client__send()");
@@ -110,6 +142,8 @@ status__err handle__SUB(bpsp__client* client) {
 
     bpsp__var_header* topic_hdr = NULL;
 
+    char* msg = "SUB OK.";
+
     HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
 
     if (topic_hdr) {
@@ -117,21 +151,15 @@ status__err handle__SUB(bpsp__client* client) {
 
         IFN_OK(s) {
             //
-            s = frame__ERR(client->out_frame, 0, s, "Cannot add subsciber into Tree.");
-        }
-        else {
-            s = frame__OK(client->out_frame, 0, "SUB OK.");
+            msg = "Cannot add subsciber into Tree.";
         }
 
     } else {
-        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+        s = BPSP_INVALID_TOPIC;
+        msg = "Missing header `x-topic`.";
     }
 
-    /* topic__print_tree(client->broker->topic_tree); */
-
-    ASSERT_BPSP_OK(s);
-
-    s = client__send(client, client->out_frame, 1);
+    s = handle__reply(client, in, s, msg);
 
     IFN_OK(s) {
         perror("client__send()");
@@ -148,6 +176,8 @@ status__err handle__UNSUB(bpsp__client* client) {
 
     bpsp__var_header* topic_hdr = NULL;
 
+    char* msg = "UNSUB OK.";
+
     HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
 
     if (topic_hdr) {
@@ -155,21 +185,15 @@ status__err handle__UNSUB(bpsp__client* client) {
 
         IFN_OK(s) {
             //
-            s = frame__ERR(client->out_frame, 0, s, "Cannot remove subsciber from Tree.");
-        }
-        else {
-            s = frame__OK(client->out_frame, 0, "UNSUB OK.");
+            msg = "Cannot remove subsciber from Tree.";
         }
 
     } else {
-        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+        s = BPSP_INVALID_TOPIC;
+        msg = "Missing header `x-topic`.";
     }
 
-    /* topic__print_tree(client->broker->topic_tree); */
-
-    ASSERT_BPSP_OK(s);
-
-    s = client__send(client, client->out_frame, 1);
+    s = handle__reply(client, in, s, msg);
 
     IFN_OK(s) {
         perror("client__send()");
@@ -214,7 +238,7 @@ status__err handle__client_loop(bpsp__client* client) {
         IFN_OK(s) {
             perror("client__read()");
             log__info("Client `%s` loop closing, (%s)", client->_id, ERR_TEXT(s));
-            return s;
+            break;
         }
 
         s = handle__in_frame(client);
@@ -222,7 +246,7 @@ status__err handle__client_loop(bpsp__client* client) {
         IFN_OK(s) {
             perror("hanle()");
             log__info("Client `%s` loop closing, (%s)", client->_id, ERR_TEXT(s));
-            return s;
+            break;
         }
     }
 
