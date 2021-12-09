@@ -8,7 +8,7 @@ import com.resources.Operation;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-public class SubscriberClient extends BpspClient implements Subscriber {
+public class SubscriberClient extends BPSPClient implements Subscriber {
 
 	private static final Logger LOGGER = LogManager.getLogger(SubscriberClient.class);
 	
@@ -19,14 +19,16 @@ public class SubscriberClient extends BpspClient implements Subscriber {
 	public void connect() {
 		try {
 			Frame frame = FrameFactory.getFrame(Operation.CONNECT);
+			frame.print();
 
 			sendFrame(frame);
 
 			Frame resFrame = recvFrame();
+			resFrame.print();
 
-			if (resFrame.getFixedHeader().getOpcode() == Operation.INFO.getCode()) {
+			if (resFrame.getOpcode() == Operation.INFO.getCode()) {
 				LOGGER.info(Operation.CONNECT.getText() + " verified OK");
-			} else if (resFrame.getFixedHeader().getOpcode() == Operation.ERR.getCode()) {
+			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
 				LOGGER.error("Failed connecting to bpsp server");
 			}
 		} catch (Exception e) {
@@ -43,9 +45,9 @@ public class SubscriberClient extends BpspClient implements Subscriber {
 
 			Frame resFrame = recvFrame();
 
-			if (resFrame.getFixedHeader().getOpcode() == Operation.OK.getCode()) {
+			if (resFrame.getOpcode() == Operation.OK.getCode()) {
 				LOGGER.info(Operation.SUB.getText() + " verified OK");
-			} else if (resFrame.getFixedHeader().getOpcode() == Operation.ERR.getCode()) {
+			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
 				LOGGER.error("Failed subcribe to bpsp server");
 			}
 		} catch (Exception e) {
@@ -62,9 +64,9 @@ public class SubscriberClient extends BpspClient implements Subscriber {
 
 			Frame resFrame = recvFrame();
 			
-			if (resFrame.getFixedHeader().getOpcode() == Operation.OK.getCode()) {
+			if (resFrame.getOpcode() == Operation.OK.getCode()) {
 				LOGGER.info(Operation.UNSUB.getText() + " verified OK");
-			} else if (resFrame.getFixedHeader().getOpcode() == Operation.ERR.getCode()) {
+			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
 				LOGGER.error("Failed unsubcribe to bpsp server");
 			}
 		} catch (Exception e) {

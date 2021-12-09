@@ -15,11 +15,11 @@ import com.utils.SystemUtils;
 public class App {
 
     // public App() {
-        // super();
+    // super();
     // }
 
     private static Logger LOGGER = LogManager.getLogger(App.class);
-    
+
     public static void main(String[] args) throws Exception {
 
         SystemUtils.clearConsole();
@@ -30,21 +30,21 @@ public class App {
         PublisherClient pubClient = null;
 
         try {
-			// init ip address and port of server
-			String serverIpAddr;
-			int serverPort;
+            // init ip address and port of server
+            String serverIpAddr;
+            int serverPort;
 
-			// get ip address and port of server
-			if (args.length < 2 || args[0].isBlank() || args[1].isBlank()) {
-				serverIpAddr = Constants.DEFAULT_SERVER_IP_ADDR;
-				serverPort = Constants.DEFAULT_SERVER_PORT;
-			} else {
-				serverIpAddr = args[0];
-				serverPort = Integer.parseInt(args[1]);
-			}
+            // get ip address and port of server
+            if (args.length < 2 || args[0].isBlank() || args[1].isBlank()) {
+                serverIpAddr = Constants.DEFAULT_SERVER_IP_ADDR;
+                serverPort = Constants.DEFAULT_SERVER_PORT;
+            } else {
+                serverIpAddr = args[0];
+                serverPort = Integer.parseInt(args[1]);
+            }
 
-			// init client and connect to server
-			subClient = new SubscriberClient(serverIpAddr, serverPort);
+            // init client and connect to server
+            subClient = new SubscriberClient(serverIpAddr, serverPort);
             pubClient = new PublisherClient(serverIpAddr, serverPort);
 
             subClient.connect();
@@ -52,7 +52,7 @@ public class App {
 
             pubClient.connect();
             pubClient.pub("locationA", "hoai dep trai");
-            
+
             while (true) {
                 if (subClient.hasData()) {
                     Frame recvFrame = subClient.recvFrame();

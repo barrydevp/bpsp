@@ -9,7 +9,7 @@ import com.resources.Operation;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-public class PublisherClient extends BpspClient implements Publisher {
+public class PublisherClient extends BPSPClient implements Publisher {
 
 	private static final Logger LOGGER = LogManager.getLogger(PublisherClient.class);
 
@@ -25,11 +25,12 @@ public class PublisherClient extends BpspClient implements Publisher {
 
 			Frame resFrame = recvFrame();
 
-			if (resFrame.getFixedHeader().getOpcode() == Operation.INFO.getCode()) {
+			if (resFrame.getOpcode() == Operation.INFO.getCode()) {
 				LOGGER.info(Operation.CONNECT.getText() + " verified OK");
-			} else if (resFrame.getFixedHeader().getOpcode() == Operation.ERR.getCode()) {
+			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
 				LOGGER.error("Failed connecting to bpsp server");
 			}
+
 		} catch (Exception e) {
 			LOGGER.error("error while connecting to bpsp server", e);
 		}
@@ -40,15 +41,15 @@ public class PublisherClient extends BpspClient implements Publisher {
 			Frame frame = FrameFactory.getFrame(Operation.PUB);
 
 			frame.setVarHeader("x-topic", topic);
-			frame.setData(content);
+			frame.putData(content);
 
 			sendFrame(frame);
 
 			Frame resFrame = recvFrame();
 
-			if (resFrame.getFixedHeader().getOpcode() == Operation.OK.getCode()) {
+			if (resFrame.getOpcode() == Operation.OK.getCode()) {
 				LOGGER.info(Operation.PUB.getText() + " verified OK");
-			} else if (resFrame.getFixedHeader().getOpcode() == Operation.ERR.getCode()) {
+			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
 				LOGGER.error("Failed publish to bpsp server");
 			}
 		} catch (Exception e) {
