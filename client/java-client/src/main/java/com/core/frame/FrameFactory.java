@@ -6,12 +6,12 @@ public class FrameFactory {
     private FrameFactory() {
     }
 
-    public static Frame getFrame(Operation operation) {
-        return FrameFactory.getFrame(operation, true);
+    public static Frame newFrame(Operation operation) {
+        return FrameFactory.newFrame(operation, false);
     }
 
-    public static Frame getFrame(Operation operation, boolean build) {
-        Frame frame = null;
+    public static Frame newFrame(Operation operation, boolean build) {
+        Frame frame;
 
         switch (operation) {
             case CONNECT:

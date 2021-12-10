@@ -8,69 +8,39 @@ import com.resources.Operation;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-public class SubscriberClient extends BPSPClient implements Subscriber {
+public class SubscriberClient {
 
-	private static final Logger LOGGER = LogManager.getLogger(SubscriberClient.class);
-	
-	public SubscriberClient(String address, int port) {
-		super(address, port);
-	}
+    private static final Logger LOGGER = LogManager.getLogger(SubscriberClient.class);
+    public BPSPClient client;
 
-	public void connect() {
-		try {
-			Frame frame = FrameFactory.getFrame(Operation.CONNECT);
-			frame.print();
+    public SubscriberClient(BPSPClient client) {
+        this.client = client;
+    }
 
-			sendFrame(frame);
+    public Subscriber sub(String topic) throws Exception {
+        Subscriber subscriber = new Subscriber(this.client, topic);
+        return this.sub(subscriber);
+    }
 
-			Frame resFrame = recvFrame();
-			resFrame.print();
+    public Subscriber sub(Subscriber subscriber) throws Exception {
+        try {
+            this.client.sub(subscriber);
 
-			if (resFrame.getOpcode() == Operation.INFO.getCode()) {
-				LOGGER.info(Operation.CONNECT.getText() + " verified OK");
-			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
-				LOGGER.error("Failed connecting to bpsp server");
-			}
-		} catch (Exception e) {
-			LOGGER.error("error while connecting to bpsp server", e);
-		}
-	}
+            return subscriber;
+        } catch (Exception e) {
+            LOGGER.error("Call Subscribe error", e);
 
-	public void sub(String topic) {
-		try {
-			Frame frame = FrameFactory.getFrame(Operation.SUB);
-			frame.setVarHeader("x-topic", topic);
+            throw e;
+        }
+    }
 
-			sendFrame(frame);
+    public void unsub(Subscriber subscriber) throws Exception {
+        try {
+            this.client.unsub(subscriber);
+        } catch (Exception e) {
+            LOGGER.error("Call Unsubscribe error", e);
 
-			Frame resFrame = recvFrame();
-
-			if (resFrame.getOpcode() == Operation.OK.getCode()) {
-				LOGGER.info(Operation.SUB.getText() + " verified OK");
-			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
-				LOGGER.error("Failed subcribe to bpsp server");
-			}
-		} catch (Exception e) {
-			LOGGER.error("error while connecting to bpsp server", e);
-		}
-	}
-
-	public void unSub(String topic) {
-		try {
-			Frame frame = FrameFactory.getFrame(Operation.UNSUB);
-			frame.setVarHeader("x-topic", topic);
-
-			sendFrame(frame);
-
-			Frame resFrame = recvFrame();
-			
-			if (resFrame.getOpcode() == Operation.OK.getCode()) {
-				LOGGER.info(Operation.UNSUB.getText() + " verified OK");
-			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
-				LOGGER.error("Failed unsubcribe to bpsp server");
-			}
-		} catch (Exception e) {
-			LOGGER.error("error while connecting to bpsp server", e);
-		}
-	}
+            throw e;
+        }
+    }
 }

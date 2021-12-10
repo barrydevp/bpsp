@@ -1,6 +1,7 @@
 package com;
 
-import com.core.frame.Frame;
+import com.core.client.BPSPClient;
+import com.core.client.Subscriber;
 import com.core.client.SubscriberClient;
 import com.core.client.PublisherClient;
 
@@ -14,10 +15,6 @@ import com.utils.SystemUtils;
 
 public class App {
 
-    // public App() {
-    // super();
-    // }
-
     private static Logger LOGGER = LogManager.getLogger(App.class);
 
     public static void main(String[] args) throws Exception {
@@ -26,6 +23,7 @@ public class App {
 
         LOGGER.info("Client began to start");
 
+        BPSPClient client = null;
         SubscriberClient subClient = null;
         PublisherClient pubClient = null;
 
@@ -43,29 +41,25 @@ public class App {
                 serverPort = Integer.parseInt(args[1]);
             }
 
+            client = new BPSPClient(serverIpAddr, serverPort);
+            client.connect();
+
             // init client and connect to server
-            subClient = new SubscriberClient(serverIpAddr, serverPort);
-            pubClient = new PublisherClient(serverIpAddr, serverPort);
+            subClient = new SubscriberClient(client);
+            pubClient = new PublisherClient(client);
 
-            subClient.connect();
-            subClient.sub("locationA");
+            subClient.sub(new Subscriber(client, "locationA"));
 
-            pubClient.connect();
             pubClient.pub("locationA", "hoai dep trai");
 
-            while (true) {
-                if (subClient.hasData()) {
-                    Frame recvFrame = subClient.recvFrame();
-                    recvFrame.print();
-                }
-            }
-
+            client.startMainLoop();
+            client.getLoop().join();
 
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
             e.printStackTrace();
-            subClient.stop();
-            pubClient.stop();
+//            subClient.stop();
+//            pubClient.stop();
         }
     }
 }

@@ -1,59 +1,34 @@
 package com.core.client;
 
 import com.core.frame.Frame;
-
 import com.core.frame.FrameFactory;
-
 import com.resources.Operation;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-public class PublisherClient extends BPSPClient implements Publisher {
+import java.util.HashMap;
 
-	private static final Logger LOGGER = LogManager.getLogger(PublisherClient.class);
+public class PublisherClient {
 
-	public PublisherClient(String address, int port) {
-		super(address, port);
-	}
+    private static final Logger LOGGER = LogManager.getLogger(PublisherClient.class);
+    private final BPSPClient client;
 
-	public void connect() {
-		try {
-			Frame frame = FrameFactory.getFrame(Operation.CONNECT);
+    public PublisherClient(BPSPClient client) {
+        this.client = client;
+    }
 
-			sendFrame(frame);
+    public void pub(String topic, String msg) throws Exception {
+        this.pub(new Publisher(this.client, topic), msg);
+    }
 
-			Frame resFrame = recvFrame();
-
-			if (resFrame.getOpcode() == Operation.INFO.getCode()) {
-				LOGGER.info(Operation.CONNECT.getText() + " verified OK");
-			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
-				LOGGER.error("Failed connecting to bpsp server");
-			}
-
-		} catch (Exception e) {
-			LOGGER.error("error while connecting to bpsp server", e);
-		}
-	}
-
-	public void pub(String topic, String content) {
-		try {
-			Frame frame = FrameFactory.getFrame(Operation.PUB);
-
-			frame.setVarHeader("x-topic", topic);
-			frame.putData(content);
-
-			sendFrame(frame);
-
-			Frame resFrame = recvFrame();
-
-			if (resFrame.getOpcode() == Operation.OK.getCode()) {
-				LOGGER.info(Operation.PUB.getText() + " verified OK");
-			} else if (resFrame.getOpcode() == Operation.ERR.getCode()) {
-				LOGGER.error("Failed publish to bpsp server");
-			}
-		} catch (Exception e) {
-			LOGGER.error("error while connecting to bpsp server", e);
-		}
-	}
+    public void pub(Publisher publisher, String msg) throws Exception {
+        try {
+            publisher.setMsg(msg);
+            this.client.pub(publisher);
+        } catch (Exception e) {
+            LOGGER.error("Call Publish error", e);
+            throw e;
+        }
+    }
 }

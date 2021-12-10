@@ -15,26 +15,19 @@ public class BPSPConnection {
     public Socket socket = null;
     protected DataInputStream in = null;
     protected DataOutputStream out = null;
-    private volatile boolean _running = false;
 
     // constructor to put ip address and port
-    public BPSPConnection(String address, int port) {
+    public BPSPConnection(String address, int port) throws UnknownHostException, IOException {
         // establish a connection
-        try {
-            socket = new Socket(address, port);
+        socket = new Socket(address, port);
 
-            LOGGER.info("Socket connection established to " + address + " - " + "port");
+        LOGGER.info("Socket connection established to " + address + " - " + port);
 
-            // take input stream
-            in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+        // take input stream
+        in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 
-            // take output stream
-            out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-        } catch (UnknownHostException u) {
-            LOGGER.error("unknown host", u);
-        } catch (IOException i) {
-            LOGGER.error("error while get socket io stream", i);
-        }
+        // take output stream
+        out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
     }
 
     public Boolean hasData() {
@@ -105,36 +98,6 @@ public class BPSPConnection {
             LOGGER.info("Closed connection");
         } catch (IOException i) {
             LOGGER.error("error while stopping socket client");
-        }
-    }
-
-    private class MainLoop implements Runnable {
-
-        /**
-         * Main looping function, accept frame, send frame, dispatcher to suscriber
-         * until _running is false
-         */
-        @Override
-        public void run() {
-            boolean shouldDoFinalShutdown = true;
-            try {
-                while (_running) {
-//                    Frame frame = _frameHandler.readFrame();
-//                    readFrame(frame);
-                }
-            } catch (Throwable ex) {
-                if (ex instanceof InterruptedException) {
-                    // loop has been interrupted during shutdown,
-                    // no need to do it again
-//                    shouldDoFinalShutdown = false;
-                } else {
-//                    handleFailure(ex);
-                }
-            } finally {
-//                if (shouldDoFinalShutdown) {
-//                    doFinalShutdown();
-//                }
-            }
         }
     }
 }
