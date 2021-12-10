@@ -78,12 +78,17 @@ public class Subscriber extends Handler {
             return false;
         }
 
-        return topicHdr.getValue().equals(this.subTag) && subTagHdr.getValue().equals(this.subTag);
+        return topicHdr.getValue().equals(this.topic) && subTagHdr.getValue().equals(this.subTag);
     }
 
     public void replyOk(Frame reply) {
-        this.running = true;
-        LOGGER.info("Subscribing on " + this.topic + ",sub_tag(" + this.subTag + ").");
+        if (this.running) {
+            this.running = false;
+            LOGGER.info("Unsubscribe on " + this.topic + ",sub_tag(" + this.subTag + ").");
+        } else {
+            this.running = true;
+            LOGGER.info("Subscribing on " + this.topic + ",sub_tag(" + this.subTag + ").");
+        }
     }
 
     public void replyError(Frame reply) {

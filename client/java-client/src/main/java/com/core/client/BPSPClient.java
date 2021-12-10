@@ -23,7 +23,7 @@ public class BPSPClient {
     private boolean isConnected;
     private volatile boolean _running;
     private Thread loop;
-    private LinkedList<Publisher> pendingPub = new LinkedList<>();
+    private final LinkedList<Handler> pendingReply = new LinkedList<>();
     private HashMap<String, Subscriber> subs = new HashMap<>();
 
     public BPSPClient() {
@@ -107,6 +107,10 @@ public class BPSPClient {
         }
     }
 
+    private void enqueuePendingReply(Handler handler) {
+        this.pendingReply.add(handler);
+    }
+
     public void pub(Publisher publisher) throws Exception {
         Frame msg = publisher.buildPubFrame();
 
@@ -127,7 +131,7 @@ public class BPSPClient {
 
         this.sendFrame(msg);
 
-        this.pendingPub.push(publisher);
+        this.enqueuePendingReply(publisher);
     }
 
     public void sub(Subscriber subscriber) throws Exception {
@@ -153,6 +157,7 @@ public class BPSPClient {
 
         this.sendFrame(sub);
 
+        this.enqueuePendingReply(subscriber);
         this.subs.put(identifier, subscriber);
     }
 
@@ -160,7 +165,7 @@ public class BPSPClient {
         String identifier = Subscriber.getIdentifier(subscriber.getTopic(), subscriber.getSubTag());
 
         Subscriber oldSubscriber = this.subs.get(identifier);
-        if (oldSubscriber != null) {
+        if (oldSubscriber == null) {
             return;
         }
 
@@ -178,6 +183,7 @@ public class BPSPClient {
         }
 
         this.sendFrame(unsub);
+        this.enqueuePendingReply(subscriber);
 
         this.subs.remove(identifier);
     }
@@ -191,6 +197,66 @@ public class BPSPClient {
         this._running = true;
 
         this.loop.start();
+    }
+
+    private void deliveryReply(Frame reply) {
+//        for (Handler handler : this.pendingReply) {
+//            if (handler.isOfFrame(reply)) {
+//                if (reply.getOpcode() == Operation.OK.getCode()) {
+//                    handler.replyOk(reply);
+//                } else {
+//                    handler.replyError(reply);
+//                }
+//                this.pendingReply.remove(handler);
+//
+//                return;
+//            }
+//        }
+
+        if (this.pendingReply.size() <= 0) {
+            LOGGER.warn("Unknown reply (" + reply.getStrData() + ").");
+            reply.print();
+            return;
+        }
+
+        Handler handler = this.pendingReply.poll();
+
+        if (reply.getOpcode() == Operation.OK.getCode()) {
+            handler.replyOk(reply);
+        } else {
+            handler.replyError(reply);
+        }
+    }
+
+    private void deliveryMsg(Frame msg) {
+        VarHeader topicHdr = msg.getVarHeader("x-topic");
+        String topic = topicHdr != null ? topicHdr.getValue() : "";
+        VarHeader subTagHdr = msg.getVarHeader("x-sub-tag");
+        String subTag = subTagHdr != null ? subTagHdr.getValue() : "_0";
+
+        String identifier = Subscriber.getIdentifier(topic, subTag);
+
+        Subscriber subscriber = this.subs.get(identifier);
+
+        if (subscriber == null) {
+            LOGGER.warn("Unknown Subscriber(" + identifier + ") for this MSG: " + msg.getStrData());
+            return;
+        }
+
+        subscriber.consumeMsg(msg);
+    }
+
+    public void processFrame(Frame frame) {
+        byte op = frame.getOpcode();
+
+        if (op == Operation.OK.getCode() || op == Operation.ERR.getCode()) {
+            deliveryReply(frame);
+        } else if (op == Operation.MSG.getCode()) {
+            deliveryMsg(frame);
+        } else {
+            LOGGER.warn("Unhandled frame (" + frame.getStrData() + ").");
+            frame.print();
+        }
     }
 
     public Thread getLoop() {
@@ -210,7 +276,7 @@ public class BPSPClient {
             try {
                 while (_running) {
                     Frame recvFrame = BPSPClient.this.recvFrame();
-                    recvFrame.print();
+                    BPSPClient.this.processFrame(recvFrame);
                 }
             } catch (Throwable ex) {
                 if (ex instanceof InterruptedException) {

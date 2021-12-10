@@ -1,6 +1,7 @@
 package com.core.client;
 
 import com.core.frame.Frame;
+import com.core.frame.VarHeader;
 
 public abstract class Handler {
     protected boolean running;
@@ -22,5 +23,9 @@ public abstract class Handler {
     }
 
     public void replyError(Frame reply) {
+    }
+
+    public boolean isOfFrame(Frame frame) {
+        return false;
     }
 }

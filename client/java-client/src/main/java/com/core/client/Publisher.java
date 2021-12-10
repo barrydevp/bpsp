@@ -29,6 +29,11 @@ public class Publisher extends Handler {
             return false;
         }
 
+        // in-case of SUB_OK, UNSUB_OK
+        if (frame.getVarHeader("x-sub-tag") != null) {
+            return false;
+        }
+
         return topicHdr.getValue().equals(this.topic);
     }
 
@@ -50,6 +55,7 @@ public class Publisher extends Handler {
         Frame msg = FrameFactory.newFrame(Operation.PUB);
 
         msg.setFlag(Flag.ACK);
+        msg.setFlag(Flag.PUB_ECHO);
         msg.setVarHeader("x-topic", this.topic);
         msg.putData(this.msg);
         msg.build();

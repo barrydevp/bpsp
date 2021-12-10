@@ -48,9 +48,16 @@ public class App {
             subClient = new SubscriberClient(client);
             pubClient = new PublisherClient(client);
 
-            subClient.sub(new Subscriber(client, "locationA"));
+            subClient.sub(new Subscriber(client, "locationA/*"));
+            subClient.sub(new Subscriber(client, "locationB/+"));
+            subClient.sub(new Subscriber(client, "locationC/sensorC"));
 
-            pubClient.pub("locationA", "hoai dep trai");
+            pubClient.pub("locationA/hello", "hoai dep trai");
+
+            Subscriber sub = subClient.sub(new Subscriber(client, "locationC/sensorC"));
+            subClient.unsub(sub);
+
+            pubClient.pub("locationC/sensorC", "un sub test");
 
             client.startMainLoop();
             client.getLoop().join();
