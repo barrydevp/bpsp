@@ -112,7 +112,7 @@ status__err frame__INFO(bpsp__frame* frame, bpsp__broker* broker);
 status__err frame__CONNECT(bpsp__frame* frame, bpsp__byte* info, uint32_t size);
 status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers,
                        uint16_t n_headers, bpsp__byte* msg, uint32_t size);
-status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers_rule,
+status__err frame__SUB(bpsp__frame* frame, char* topic, char* sub_tag, bpsp__uint8 flag, bpsp__var_header_pair* headers_rule,
                        uint16_t n_headers);
 status__err frame__UNSUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag);
 status__err frame__MSG(bpsp__frame* frame, bpsp__frame* src);

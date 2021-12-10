@@ -18,7 +18,12 @@ void* test_sub(void* arg) {
     *(str) = abs((i % 42)) + 48;
     /* printf("%s\n", str); */
 
-    client__sub(client, str, 1);
+    client__sub1(client, str, "_88", 1);
+    client__sub1(client, str, "_77", 1);
+
+    status__err s = client__unsub0(client, str, "_88", 1);
+
+    printf("%s\n", status__get_text(s));
 
     return 0;
 }

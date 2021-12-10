@@ -115,15 +115,15 @@ void __publish(bpsp__connection* conn) {
     s = frame__send(conn, out);
     frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
     s = frame__send(conn, out);
-    frame__SUB(out, (char*)topic, 0, NULL, 0);
+    frame__SUB(out, (char*)topic, NULL, 0, NULL, 0);
     s = frame__send(conn, out);
-    frame__SUB(out, NULL, 0, NULL, 0);
+    frame__SUB(out, NULL, NULL, 0, NULL, 0);
     s = frame__send(conn, out);
-    frame__SUB(out, (char*)"locationA/*", 0, NULL, 0);
+    frame__SUB(out, (char*)"locationA/*", NULL, 0, NULL, 0);
     s = frame__send(conn, out);
-    frame__SUB(out, (char*)"locationA/+/alo", 0, NULL, 0);
+    frame__SUB(out, (char*)"locationA/+/alo", NULL, 0, NULL, 0);
     s = frame__send(conn, out);
-    frame__SUB(out, (char*)"locationB/sensorB", 0, NULL, 0);
+    frame__SUB(out, (char*)"locationB/sensorB", NULL, 0, NULL, 0);
     s = frame__send(conn, out);
     frame__PUB(out, (char*)topic, 0, NULL, 0, (bpsp__byte*)msg, strlen(msg));
     s = frame__send(conn, out);
@@ -315,7 +315,7 @@ void handle_sub() {
     int argi = 0;
     while (argi < cmd.argc) {
         char* topic = cmd.argv[argi++];
-        s = frame__SUB(out, topic, FL_ACK, NULL, 0);
+        s = frame__SUB(out, topic, "_99", FL_ACK, NULL, 0);
 
         IFN_OK(s) {
             //

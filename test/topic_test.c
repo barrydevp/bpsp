@@ -31,7 +31,7 @@ int main() {
     bpsp__topic_tree tree = {};
     topic__init_tree(&tree);
     bpsp__topic_tree* ptree = topic__new_tree();
-    bpsp__subscriber* sub = subscriber__new("locationA/sensorA/*", client, NULL);
+    bpsp__subscriber* sub = subscriber__new("locationA/sensorA/*", NULL, client, NULL);
 
     status__err s;
     /* uint16_t n_tok = 0; */
@@ -48,17 +48,17 @@ int main() {
     s = topic__add_subscriber(&tree, sub, 1);
 
     bpsp__client* client1 = client__new(NULL, broker);
-    bpsp__subscriber* sub1 = subscriber__new("locationA/sensorA/uptime", client1, NULL);
+    bpsp__subscriber* sub1 = subscriber__new("locationA/sensorA/uptime", NULL, client1, NULL);
     s = topic__add_subscriber(&tree, sub1, 1);
     bpsp__client* client2 = client__new(NULL, broker);
-    bpsp__subscriber* sub2 = subscriber__new("locationA/sensorA/uptime", client2, NULL);
+    bpsp__subscriber* sub2 = subscriber__new("locationA/sensorA/uptime", NULL, client2, NULL);
     s = topic__add_subscriber(&tree, sub2, 1);
     /* subscriber__free(sub1); */
 
-    bpsp__subscriber* sub3 = subscriber__new("locationA/sensorA/downtime", client, NULL);
+    bpsp__subscriber* sub3 = subscriber__new("locationA/sensorA/downtime", NULL, client, NULL);
     s = topic__add_subscriber(&tree, sub3, 1);
 
-    bpsp__subscriber* sub4 = subscriber__new("locationA/sensorA/uptime", client, NULL);
+    bpsp__subscriber* sub4 = subscriber__new("locationA/sensorA/uptime", NULL, client, NULL);
     s = topic__add_subscriber(&tree, sub4, 1);
     s = topic__add_subscriber(&tree, sub4, 1);
     topic__print_tree(&tree);

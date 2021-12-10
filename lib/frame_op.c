@@ -93,8 +93,8 @@ status__err frame__PUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
     return s;
 }
 
-status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__var_header_pair* headers_rule,
-                       uint16_t n_headers) {
+status__err frame__SUB(bpsp__frame* frame, char* topic, char* sub_tag, bpsp__uint8 flag,
+                       bpsp__var_header_pair* headers_rule, uint16_t n_headers) {
     /* ASSERT_ARG(topic && strlen(topic), BPSP_INVALID_TOPIC); */
 
     status__err s = frame__empty(frame);
@@ -108,6 +108,11 @@ status__err frame__SUB(bpsp__frame* frame, char* topic, bpsp__uint8 flag, bpsp__
 
     if (topic) {
         s = frame__set_var_header(frame, "x-topic", topic);
+        ASSERT_BPSP_OK(s);
+    }
+
+    if (sub_tag) {
+        s = frame__set_var_header(frame, "x-sub-tag", sub_tag);
         ASSERT_BPSP_OK(s);
     }
 
