@@ -14,6 +14,7 @@
 extern uint8_t log__timestamps;
 extern uint8_t log__stack_trace;
 extern uint8_t log__enable;
+extern uint8_t log__frame;
 
 void _log__print(const char* label, const char* fmt, ...);
 void _log__info(const char* fmt, ...);

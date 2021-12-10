@@ -15,6 +15,7 @@
 uint8_t log__timestamps = 0;
 uint8_t log__stack_trace = 0;
 uint8_t log__enable = 1;
+uint8_t log__frame = 0;
 
 static inline void print_label(const char* label) {
     if (log__timestamps) {

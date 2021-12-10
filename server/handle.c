@@ -92,6 +92,19 @@ status__err handle__PUB(bpsp__client* client) {
                         continue;
                     }
 
+                    // set sub_tag & origin topic
+                    s = frame__set_var_header(deliver_frame, "x-sub-tag", p->sub_tag);
+                    // TODO: Handle when cannot set_var_header
+                    IFN_OK(s) {
+                        //
+                        continue;
+                    }
+                    s = frame__set_var_header(deliver_frame, "x-origin-topic", topic_hdr->value);
+                    // TODO: Handle when cannot set_var_header
+                    IFN_OK(s) {
+                        //
+                        continue;
+                    }
                     printf("%s", p->_id);
                     s = broker__deliver_msg(client, p, deliver_frame);
                     // TODO: inspect error to determine if we can continue deliver msg or not.

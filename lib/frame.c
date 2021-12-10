@@ -9,6 +9,8 @@
 #include "status.h"
 #include "util.h"
 
+extern uint8_t log__frame;
+
 bpsp__var_header* var_header__new(char* key, char* value) {
     ASSERT_ARG(key, NULL);
     /* ASSERT_ARG(strlen(key), NULL); */
@@ -538,29 +540,31 @@ bpsp__frame* frame__dup(bpsp__frame* src, uint8_t build) {
 }
 
 void frame__print(bpsp__frame* frame) {
-    printf("[FRAME]\n");
+    if (log__frame) {
+        printf("[FRAME]\n");
 
-    if (frame) {
-        printf("(%u, %s, " BYTE_TO_BINARY_PATTERN ")\n", frame->vars_size, OP_TEXT(frame->opcode),
-               BYTE_TO_BINARY(frame->flag));
-        printf("%u\n", frame->data_size);
+        if (frame) {
+            printf("(%u, %s, " BYTE_TO_BINARY_PATTERN ")\n", frame->vars_size, OP_TEXT(frame->opcode),
+                   BYTE_TO_BINARY(frame->flag));
+            printf("%u\n", frame->data_size);
 
-        bpsp__var_header *var_header, *tmp;
-        HASH_ITER(hh, frame->var_headers, var_header, tmp) {
-            printf("\"%s\"\"%s\";\n", var_header->key, var_header->value);
+            bpsp__var_header *var_header, *tmp;
+            HASH_ITER(hh, frame->var_headers, var_header, tmp) {
+                printf("\"%s\"\"%s\";\n", var_header->key, var_header->value);
+            }
+
+            printf("######\n");
+            if (frame->data_size > 0) {
+                char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
+                mem__memcpy(payload, frame->payload, frame->data_size);
+                *(payload + frame->data_size) = '\0';
+                printf("%s\n", payload);
+                mem__free(payload);
+            }
+
+        } else {
+            printf("NULL\n");
         }
-
-        printf("######\n");
-        if (frame->data_size > 0) {
-            char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
-            mem__memcpy(payload, frame->payload, frame->data_size);
-            *(payload + frame->data_size) = '\0';
-            printf("%s\n", payload);
-            mem__free(payload);
-        }
-
-    } else {
-        printf("NULL\n");
+        printf("\n");
     }
-    printf("\n");
 }

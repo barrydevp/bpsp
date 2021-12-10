@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
     // setting logging
     log__timestamps = 0;
     log__stack_trace = 1;
+    log__frame = 1;
 
     // declare socket attribute
     int listen_port = DEFAULT_PORT;

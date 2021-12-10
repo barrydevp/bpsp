@@ -81,6 +81,8 @@ status__err frame__recv(bpsp__connection* conn, bpsp__frame* frame) {
         return s;
     }
 
+    frame__print(frame);
+
     return s;
 }
 
@@ -89,6 +91,8 @@ status__err frame__send(bpsp__connection* conn, bpsp__frame* frame) {
     /* ASSERT_ARG(frame, BPSP_INVALID_ARG); */
 
     status__err s = frame__is_completed(frame);
+
+    frame__print(frame);
 
     ASSERT_BPSP_OK(s);
 
