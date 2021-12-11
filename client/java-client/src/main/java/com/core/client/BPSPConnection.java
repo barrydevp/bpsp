@@ -1,5 +1,6 @@
 package com.core.client;
 
+import com.resources.BPSPException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -17,9 +18,15 @@ public class BPSPConnection {
     protected DataOutputStream out = null;
 
     // constructor to put ip address and port
-    public BPSPConnection(String address, int port) throws UnknownHostException, IOException {
+    public BPSPConnection(String address, int port) throws BPSPException, IOException {
         // establish a connection
-        socket = new Socket(address, port);
+        try {
+            socket = new Socket(address, port);
+        } catch (UnknownHostException uhe) {
+            throw new BPSPException("Unknown Host: " + uhe.getMessage());
+        } catch (IOException ioe) {
+            throw ioe;
+        }
 
         LOGGER.info("Socket connection established to " + address + " - " + port);
 
@@ -89,7 +96,19 @@ public class BPSPConnection {
         }
     }
 
+    public boolean isClose() {
+        if (this.socket == null) {
+            return true;
+        }
+
+        return this.socket.isClosed();
+    }
+
     public void stop() {
+        if (this.isClose()) {
+            return;
+        }
+
         try {
             // close connection
             in.close();

@@ -22,7 +22,8 @@ public class BPSPClient {
     private BPSPConnection connection;
     private boolean isConnected;
     private volatile boolean _running;
-    private Thread loop;
+    private MainLoop loop;
+    private Thread threadLoop;
     private final LinkedList<Handler> pendingReply = new LinkedList<>();
     private HashMap<String, Subscriber> subs = new HashMap<>();
 
@@ -36,6 +37,13 @@ public class BPSPClient {
         this.port = port;
         this.isConnected = false;
         this._running = false;
+    }
+
+    public void connect(String address, int port) throws Exception {
+        this.address = address;
+        this.port = port;
+
+        this.connect();
     }
 
     public void connect() throws Exception {
@@ -64,11 +72,7 @@ public class BPSPClient {
 
         } catch (Exception e) {
             LOGGER.error("Error while connecting to BPSP server", e);
-            this.isConnected = false;
-            if (this.connection != null) {
-                this.connection.stop();
-                this.connection = null;
-            }
+            this.close();
             throw e;
         }
     }
@@ -189,30 +193,44 @@ public class BPSPClient {
     }
 
     public void startMainLoop() {
-        if (this.loop != null) {
+        if (!this.isConnected()) {
             return;
         }
 
-        this.loop = new Thread(new MainLoop());
+        if (this.threadLoop != null) {
+            return;
+        }
+
+        this.threadLoop = new Thread(new MainLoop());
         this._running = true;
 
-        this.loop.start();
+        this.threadLoop.start();
+        LOGGER.info("Start main loop.");
     }
 
-    private void deliveryReply(Frame reply) {
-//        for (Handler handler : this.pendingReply) {
-//            if (handler.isOfFrame(reply)) {
-//                if (reply.getOpcode() == Operation.OK.getCode()) {
-//                    handler.replyOk(reply);
-//                } else {
-//                    handler.replyError(reply);
-//                }
-//                this.pendingReply.remove(handler);
-//
-//                return;
+    public void stopMainLoop() {
+        if (this._running) {
+            this._running = false;
+        }
+
+        if (this.threadLoop == null) {
+            return;
+        }
+
+//        if (!this.threadLoop.isInterrupted()) {
+//            this.threadLoop.interrupt();
+//            try {
+//                this.threadLoop.join();
+//            } catch (InterruptedException e) {
+//                LOGGER.error(e);
 //            }
 //        }
 
+        this.threadLoop = null;
+        LOGGER.info("Stop main loop.");
+    }
+
+    private void deliveryReply(Frame reply) {
         if (this.pendingReply.size() <= 0) {
             LOGGER.warn("Unknown reply (" + reply.getStrData() + ").");
             reply.print();
@@ -259,8 +277,23 @@ public class BPSPClient {
         }
     }
 
+    public void close() {
+        if (!this.isConnected()) {
+            return;
+        }
+
+//        this.stopMainLoop();
+
+        if (this.connection != null) {
+            this.connection.stop();
+        }
+
+        this.isConnected = false;
+        this.stopMainLoop();
+    }
+
     public Thread getLoop() {
-        return this.loop;
+        return this.threadLoop;
     }
 
     private class MainLoop implements Runnable {
@@ -286,6 +319,8 @@ public class BPSPClient {
                 } else {
 //                    handleFailure(ex);
                 }
+
+                LOGGER.error("Mainloop Exception", ex);
             } finally {
 //                if (shouldDoFinalShutdown) {
 //                    doFinalShutdown();
