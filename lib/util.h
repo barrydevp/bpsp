@@ -16,5 +16,6 @@
   (byte & 0x01 ? '1' : '0')
 
 void rand_str(char* str, size_t size);
+void date_now_utc(char* str, size_t len);
 
 #endif  // _UTIL_H_

@@ -14,6 +14,8 @@
 
 uint8_t log__timestamps = 0;
 uint8_t log__stack_trace = 0;
+uint8_t log__enable = 1;
+uint8_t log__frame = 0;
 
 static inline void print_label(const char* label) {
     if (log__timestamps) {
@@ -31,13 +33,15 @@ static inline void print_label(const char* label) {
 }
 
 void _log__print(const char* label, const char* fmt, ...) {
-    if (label) {
-        print_label(label);
-    } else {
-        print_label("LOG");
-    }
+    if (log__enable) {
+        if (label) {
+            print_label(label);
+        } else {
+            print_label("LOG");
+        }
 
-    _VPRINT
+        _VPRINT
+    }
 }
 
 void _log__debug(const char* fmt, ...) {

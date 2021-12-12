@@ -15,6 +15,10 @@
 #include "log.h"
 #include "status.h"
 
+#ifdef TRACE_ALL
+#define TRACE_ALL
+#endif
+
 #define DEFAULT_PORT 29010
 /* #define DEFAULT_ADDR "127.0.0.1" */
 #define DEFAULT_ADDR "0.0.0.0"
@@ -48,6 +52,7 @@ int main(int argc, char* argv[]) {
     // setting logging
     log__timestamps = 0;
     log__stack_trace = 1;
+    log__frame = 1;
 
     // declare socket attribute
     int listen_port = DEFAULT_PORT;

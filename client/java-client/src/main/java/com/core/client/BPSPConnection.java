@@ -1,5 +1,6 @@
 package com.core.client;
 
+import com.resources.BPSPException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -7,35 +8,33 @@ import java.net.*;
 
 import java.io.*;
 
-public class SocketClient {
+public class BPSPConnection {
 
-    private static final Logger LOGGER = LogManager.getLogger(SocketClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(BPSPConnection.class);
 
-	// initialize socket and input output streams
-    public Socket socket            = null;
-    protected DataInputStream  in   = null;
-    protected DataOutputStream out     = null;
+    // initialize socket and input output streams
+    public Socket socket = null;
+    protected DataInputStream in = null;
+    protected DataOutputStream out = null;
 
     // constructor to put ip address and port
-    public SocketClient(String address, int port)
-    {
+    public BPSPConnection(String address, int port) throws BPSPException, IOException {
         // establish a connection
-        try
-        {
+        try {
             socket = new Socket(address, port);
-
-            LOGGER.info("Socket connection established to " + address + " - " + "port");
-
-            // take input stream
-            in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-  
-            // take output stream
-            out = new DataOutputStream(socket.getOutputStream());
-        } catch(UnknownHostException u) {
-            LOGGER.error("unknown host", u);
-        } catch(IOException i) {
-            LOGGER.error("error while get socket io stream", i);
+        } catch (UnknownHostException uhe) {
+            throw new BPSPException("Unknown Host: " + uhe.getMessage());
+        } catch (IOException ioe) {
+            throw ioe;
         }
+
+        LOGGER.info("Socket connection established to " + address + " - " + port);
+
+        // take input stream
+        in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+
+        // take output stream
+        out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
     }
 
     public Boolean hasData() {
@@ -48,12 +47,12 @@ public class SocketClient {
         }
         return false;
     }
-    
+
     protected String recvString() {
         String line = "";
         try {
             line = in.readUTF();
-        } catch(IOException i) {
+        } catch (IOException i) {
             LOGGER.error(i);
         }
         return line;
@@ -62,7 +61,8 @@ public class SocketClient {
     protected void sendString(String message) {
         try {
             out.writeUTF(message);
-        } catch(IOException i) {
+            out.flush();
+        } catch (IOException i) {
             LOGGER.error(i);
         }
     }
@@ -71,17 +71,18 @@ public class SocketClient {
         byte[] result = new byte[len];
         try {
             in.readFully(result, off, len);
-        } catch(IOException i) {
-            LOGGER.error("error while receiving bytes",i);
+        } catch (IOException i) {
+            LOGGER.error("error while receiving bytes", i);
         }
         return result;
     }
+
     protected byte[] recvBytes(int len) {
         byte[] result = new byte[len];
         try {
             in.readFully(result, 0, len);
-        } catch(IOException i) {
-            LOGGER.error("error while receiving bytes",i);
+        } catch (IOException i) {
+            LOGGER.error("error while receiving bytes", i);
         }
         return result;
     }
@@ -89,19 +90,32 @@ public class SocketClient {
     protected void sendBytes(byte[] bytes, int off, int len) {
         try {
             out.write(bytes, off, len);
-        } catch(IOException i) {
-            LOGGER.error("error while sending bytes",i);
+            out.flush();
+        } catch (IOException i) {
+            LOGGER.error("error while sending bytes", i);
         }
     }
 
+    public boolean isClose() {
+        if (this.socket == null) {
+            return true;
+        }
+
+        return this.socket.isClosed();
+    }
+
     public void stop() {
+        if (this.isClose()) {
+            return;
+        }
+
         try {
             // close connection
             in.close();
             out.close();
             socket.close();
             LOGGER.info("Closed connection");
-        } catch(IOException i) {
+        } catch (IOException i) {
             LOGGER.error("error while stopping socket client");
         }
     }

@@ -139,12 +139,13 @@ status__err topic__node_add_sub(topic__node* node, bpsp__subscriber* sub) {
 
     HASH_FIND_STR(node->subs, sub->_id, hsh_sub);
 
-    if (1 || !hsh_sub) {
+    if (!hsh_sub || hsh_sub->sub != sub) {
         subscriber__hash* hsh_sub = subscriber__new_hash_elt(sub->_id, sub);
         ASSERT_ARG(hsh_sub, BPSP_NO_MEMORY);
 
         HASH_ADD_STR(node->subs, key, hsh_sub);
     } else {
+        log__debug("Duplicate subscriber.");
         return BPSP_TREE_DUP_SUBSCRIBER;
     }
 
@@ -278,9 +279,7 @@ void topic__token_to_array(char* arr[], char* first_tok, int n_tok) {
 }
 
 status__err topic__add_subscriber(bpsp__topic_tree* tree, bpsp__subscriber* sub, uint8_t lock) {
-    ASSERT_ARG(tree, BPSP_INVALID_ARG);
-    ASSERT_ARG(sub, BPSP_INVALID_ARG);
-    ASSERT_ARG(sub->_id, BPSP_INVALID_ARG);
+    ASSERT_ARG(tree && sub && sub->_id, BPSP_INVALID_ARG);
 
     status__err s = BPSP_OK;
 
@@ -488,9 +487,7 @@ void topic__print_tree(bpsp__topic_tree* tree) {
 }
 
 status__err hash__subscriber_copy_to_array(UT_array* arr, subscriber__hash* subs) {
-    ASSERT_ARG(arr, BPSP_INVALID_ARG);
-
-    ASSERT_ARG(subs, BPSP_OK);
+    ASSERT_ARG(arr && subs, BPSP_INVALID_ARG);
 
     subscriber__hash *_sub, *tmp;
     HASH_ITER(hh, subs, _sub, tmp) {
@@ -575,6 +572,11 @@ UT_array* topic__tree_find_subscribers(bpsp__topic_tree* tree, char* topic, uint
     char* first_tok;
     int n_tok = 0;
     status__err s = topic__extract_token(topic, &n_tok, &first_tok);
+
+    IFN_OK(s) {
+        //
+        return NULL;
+    }
 
     if (lock) {
         /* pthread_mutex_lock(&tree->mutex); */

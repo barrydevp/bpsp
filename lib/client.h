@@ -15,8 +15,9 @@
 #define BPSP_CLIENT_ID_LEN 6
 
 struct bpsp__subscriber {
-    char* _id;             // need malloc; _id = client_id + '/' + topic => 'Sa123u/locationA/sensorA'
+    char* _id;  // need malloc; _id = client_id + '/' + topic => 'Sa123u/locationA/sensorA'
     char* client_id;
+    char* sub_tag;         // sub_tag send from client to identify subscriber in the same client
     bpsp__client* client;  // reference
 
     topic__node* node;  // reference to node
@@ -31,7 +32,7 @@ struct subscriber__hash {
 };
 
 void subscriber__ctor(void* sub);
-bpsp__subscriber* subscriber__new(char* topic, bpsp__client* client, topic__node* node);
+bpsp__subscriber* subscriber__new(char* topic, char* sub_tag, bpsp__client* client, topic__node* node);
 void subscriber__copy(void* _dst, const void* _src);
 void subscriber__dtor(void* _elt);
 void subscriber__free(bpsp__subscriber* sub);
@@ -54,7 +55,7 @@ struct bpsp__client {
     pthread_cond_t ref_cond;
     pthread_mutex_t mutex;
     pthread_rwlock_t rw_lock;  // multiple thread may write same time but we assume only one thread read at a time,
-                                // so we use this mutex to lock write only
+                               // so we use this mutex to lock write only
 
     // frame
     bpsp__frame* in_frame;
@@ -73,9 +74,13 @@ status__err client__close(bpsp__client* client);
 status__err client__destroy(bpsp__client* client);
 status__err client__recv(bpsp__client* client, bpsp__frame* frame, uint8_t lock);
 status__err client__send(bpsp__client* client, bpsp__frame* frame, uint8_t lock);
+status__err client__sendOK(bpsp__client* client, bpsp__frame* in, char* msg);
 status__err client__read(bpsp__client* client);
 status__err client__write(bpsp__client* client, bpsp__frame* frame);
+status__err client__sub0(bpsp__client* client, bpsp__subscriber* sub, uint8_t lock);
 status__err client__sub(bpsp__client* client, char* topic, uint8_t lock);
+status__err client__sub1(bpsp__client* client, char* topic, char* sub_tag, uint8_t lock);
+status__err client__unsub0(bpsp__client* client, char* topic, char* sub_tag, uint8_t lock);
 status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock);
 void client__unsub_all(bpsp__client* client, uint8_t lock);
 

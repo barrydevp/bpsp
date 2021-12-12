@@ -42,19 +42,21 @@ void subscriber__ctor(void* elt) {
     memset(sub, 0, sizeof(*sub));
 }
 
-char* subscriber__gen_id(char* topic, bpsp__client* client) {
+char* subscriber__gen_id(char* topic, char* sub_tag, bpsp__client* client) {
     size_t cli_id_len = strlen(client->_id);
     size_t topic_len = strlen(topic);
-    char* _id = mem__malloc(sizeof(char) * (cli_id_len + topic_len + 2));
+    size_t sub_tag_len = strlen(sub_tag);
+    char* _id = mem__malloc(sizeof(char) * (cli_id_len + sub_tag_len + topic_len + 2));
 
     if (!_id) {
         return NULL;
     }
 
     mem__memmove(_id, client->_id, cli_id_len);
-    *(_id + cli_id_len) = '/';
-    mem__memmove(_id + cli_id_len + 1, topic, topic_len);
-    *(_id + cli_id_len + topic_len + 1) = '\0';
+    mem__memmove(_id + cli_id_len, sub_tag, sub_tag_len);
+    *(_id + cli_id_len + sub_tag_len) = '/';
+    mem__memmove(_id + cli_id_len + sub_tag_len + 1, topic, topic_len);
+    *(_id + cli_id_len + sub_tag_len + topic_len + 1) = '\0';
 
     return _id;
 }
@@ -62,7 +64,47 @@ char* subscriber__gen_id(char* topic, bpsp__client* client) {
 char* subscriber__get_topic(bpsp__subscriber* sub) {
     ASSERT_ARG(sub, NULL);
 
-    return sub->_id + strlen(sub->client_id) + 1;
+    int offset = 1;
+
+    if (sub->client_id) {
+        offset += strlen(sub->client_id);
+    }
+
+    if (sub->sub_tag) {
+        offset += strlen(sub->sub_tag);
+    }
+
+    return sub->_id + offset;
+}
+
+char* subscriber__get_identifier(bpsp__subscriber* sub) {
+    ASSERT_ARG(sub, NULL);
+
+    int offset = 0;
+
+    if (sub->client_id) {
+        offset += strlen(sub->client_id);
+    }
+
+    return sub->_id + offset;
+}
+
+char* subscriber__make_identifier(char* topic, char* sub_tag) {
+    size_t topic_len = strlen(topic);
+    size_t sub_tag_len = strlen(sub_tag);
+
+    char* iden = mem__malloc(sizeof(char) * (sub_tag_len + topic_len + 2));
+
+    if (!iden) {
+        return NULL;
+    }
+
+    mem__memmove(iden, sub_tag, sub_tag_len);
+    *(iden + sub_tag_len) = '/';
+    mem__memmove(iden + sub_tag_len + 1, topic, topic_len);
+    *(iden + sub_tag_len + topic_len + 1) = '\0';
+
+    return iden;
 }
 
 char* subscriber__get_client_id(bpsp__subscriber* sub) {
@@ -71,7 +113,7 @@ char* subscriber__get_client_id(bpsp__subscriber* sub) {
     return sub->client_id;
 }
 
-bpsp__subscriber* subscriber__new(char* topic, bpsp__client* client, topic__node* node) {
+bpsp__subscriber* subscriber__new(char* topic, char* sub_tag, bpsp__client* client, topic__node* node) {
     ASSERT_ARG(topic && client, NULL);
 
     bpsp__subscriber* sub = (bpsp__subscriber*)mem__malloc(sizeof(bpsp__subscriber));
@@ -80,23 +122,33 @@ bpsp__subscriber* subscriber__new(char* topic, bpsp__client* client, topic__node
 
     subscriber__ctor((void*)sub);
 
-    sub->_id = subscriber__gen_id(topic, client);
+    // set default sub_tag if not have
+    sub_tag = sub_tag ? sub_tag : "_0";
+
+    sub->_id = subscriber__gen_id(topic, sub_tag, client);
 
     if (!sub->_id) {
-        subscriber__free(sub);
-        return NULL;
+        goto ERROR_1;
     }
 
     sub->client_id = mem__strdup(client->_id);
     if (!sub->client_id) {
-        subscriber__free(sub);
-        return NULL;
+        goto ERROR_1;
+    }
+
+    sub->sub_tag = mem__strdup(sub_tag);
+    if (!sub->sub_tag) {
+        goto ERROR_1;
     }
 
     sub->client = client;
     sub->node = node;
 
     return sub;
+
+ERROR_1:
+    subscriber__free(sub);
+    return NULL;
 }
 
 void subscriber__copy(void* _dst, const void* _src) {
@@ -109,6 +161,10 @@ void subscriber__copy(void* _dst, const void* _src) {
 
     if (src->client_id) {
         dst->client_id = mem__strdup(src->client_id);
+    }
+
+    if (src->sub_tag) {
+        dst->sub_tag = mem__strdup(src->sub_tag);
     }
 
     dst->client = src->client;
@@ -128,6 +184,10 @@ void subscriber__dtor(void* _elt) {
 
     if (elt->client_id) {
         mem__free(elt->client_id);
+    }
+
+    if (elt->sub_tag) {
+        mem__free(elt->sub_tag);
     }
 }
 
@@ -351,7 +411,7 @@ status__err client__recv(bpsp__client* client, bpsp__frame* frame, uint8_t lock)
 
     ASSERT_BPSP_OK(s);
 
-    log__trace_in_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+    log__trace_in(client, frame);
 
     return s;
 }
@@ -391,7 +451,7 @@ status__err client__send(bpsp__client* client, bpsp__frame* frame, uint8_t lock)
 
     ASSERT_BPSP_OK(s);
 
-    log__trace_out_op(frame->opcode, " . %s:%d", inet_ntoa(conn->addr->sin_addr), ntohs(conn->addr->sin_port));
+    log__trace_out(client, frame);
 
     return s;
 }
@@ -437,44 +497,78 @@ status__err client__write(bpsp__client* client, bpsp__frame* frame) {
     return s;
 }
 
-status__err client__sub(bpsp__client* client, char* topic, uint8_t lock) {
-    ASSERT_ARG(client && topic && client->broker, BPSP_INVALID_ARG);
+status__err client__sub0(bpsp__client* client, bpsp__subscriber* sub, uint8_t lock) {
+    ASSERT_ARG(client && sub && client->broker, BPSP_INVALID_ARG);
     /* ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG); */
 
     status__err s = BPSP_OK;
 
-    bpsp__subscriber* sub = NULL;
     // locking client for modify the shared subs hash table, necessary ?
     // we only use one reader at a time, does it wasted ?
     if (lock) {
         pthread_mutex_lock(&client->mutex);
     }
 
+    char* identifier = subscriber__get_identifier(sub);
     subscriber__hash* hsh_sub = NULL;
-    HASH_FIND_STR(client->subs, topic, hsh_sub);
+    HASH_FIND_STR(client->subs, identifier, hsh_sub);
 
     if (!hsh_sub) {
-        sub = subscriber__new(topic, client, NULL);
-        hsh_sub = subscriber__new_hash_elt(topic, sub);
+        hsh_sub = subscriber__new_hash_elt(identifier, sub);
         HASH_ADD_STR(client->subs, key, hsh_sub);
+    } else {
+        // duplicate topic + sub_tag
+        s = BPSP_TREE_DUP_SUBSCRIBER;
     }
 
     if (lock) {
         pthread_mutex_unlock(&client->mutex);
     }
 
-    if (sub) {
+    IF_OK(s) {
+        //
         s = broker__add_sub(client->broker, sub, lock);
     }
 
     return s;
 }
 
-status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
-    ASSERT_ARG(client && topic && client->broker, BPSP_INVALID_ARG);
+status__err client__sub1(bpsp__client* client, char* topic, char* sub_tag, uint8_t lock) {
+    ASSERT_ARG(topic, BPSP_INVALID_ARG);
+
+    status__err s = BPSP_OK;
+
+    bpsp__subscriber* sub = subscriber__new(topic, sub_tag, client, NULL);
+
+    if (!sub) {
+        return BPSP_NO_MEMORY;
+    }
+
+    s = client__sub0(client, sub, lock);
+
+    IFN_OK(s) {
+        //
+        subscriber__free(sub);
+    }
+
+    return s;
+}
+
+status__err client__sub(bpsp__client* client, char* topic, uint8_t lock) {
+    return client__sub1(client, topic, "_0", 1);
+}
+
+status__err client__unsub0(bpsp__client* client, char* topic, char* sub_tag, uint8_t lock) {
+    ASSERT_ARG(client && topic && sub_tag && client->broker, BPSP_INVALID_ARG);
     /* ASSERT_ARG(client->broker->topic_tree, BPSP_INVALID_ARG); */
 
     status__err s = BPSP_OK;
+
+    char* identifier = subscriber__make_identifier(topic, sub_tag);
+
+    if (!identifier) {
+        return BPSP_NO_MEMORY;
+    }
 
     bpsp__subscriber* sub = NULL;
     // locking client for modify the shared subs hash table, necessary? we only use one reader at a time, it wasted?
@@ -483,12 +577,14 @@ status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
     }
 
     subscriber__hash* hsh_sub = NULL;
-    HASH_FIND_STR(client->subs, topic, hsh_sub);
+    HASH_FIND_STR(client->subs, identifier, hsh_sub);
 
     if (hsh_sub) {
         sub = hsh_sub->sub;
         HASH_DEL(client->subs, hsh_sub);
         subscriber__free_hash_elt(hsh_sub);
+    } else {
+        s = BPSP_INVALID_SUBSCRIBER;
     }
 
     if (lock) {
@@ -500,5 +596,11 @@ status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
         subscriber__free(sub);
     }
 
+    mem__free(identifier);
+
     return s;
+}
+
+status__err client__unsub(bpsp__client* client, char* topic, uint8_t lock) {
+    return client__unsub0(client, topic, "_0", lock);
 }

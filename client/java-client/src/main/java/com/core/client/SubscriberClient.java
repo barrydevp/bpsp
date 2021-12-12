@@ -1,20 +1,46 @@
 package com.core.client;
 
-public class SubscriberClient extends BpspClient implements Subscriber {
-	
-	public SubscriberClient(String address, int port) {
-		super(address, port);
-	}
+import com.core.frame.Frame;
 
-	public void connect() {
+import com.core.frame.FrameFactory;
+import com.resources.Operation;
 
-	}
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
-	public void sub(String topic) {
+public class SubscriberClient {
 
-	}
+    private static final Logger LOGGER = LogManager.getLogger(SubscriberClient.class);
+    public BPSPClient client;
 
-	public void unSub(String topic) {
+    public SubscriberClient(BPSPClient client) {
+        this.client = client;
+    }
 
-	}
+    public Subscriber sub(String topic) throws Exception {
+        Subscriber subscriber = new Subscriber(this.client, topic);
+        return this.sub(subscriber);
+    }
+
+    public Subscriber sub(Subscriber subscriber) throws Exception {
+        try {
+            this.client.sub(subscriber);
+
+            return subscriber;
+        } catch (Exception e) {
+            LOGGER.error("Call Subscribe error", e);
+
+            throw e;
+        }
+    }
+
+    public void unsub(Subscriber subscriber) throws Exception {
+        try {
+            this.client.unsub(subscriber);
+        } catch (Exception e) {
+            LOGGER.error("Call Unsubscribe error", e);
+
+            throw e;
+        }
+    }
 }

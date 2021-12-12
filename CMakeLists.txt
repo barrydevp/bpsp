@@ -27,9 +27,9 @@ file(GLOB TOOLS_SRC ${PROJECT_SOURCE_DIR}/tools/*.c)
 # add_library(bpsp STATIC ${LIBS})
 
 # BUILD BIN
-add_executable(server ${SERVER_SRC})
-target_link_libraries(server bpsp)
+add_executable(bpsp_server ${SERVER_SRC})
+target_link_libraries(bpsp_server libbpsp)
 
-add_executable(bpsp_tools ${TOOLS_SRC})
-target_link_libraries(bpsp_tools bpsp)
+add_executable(bpsp ${TOOLS_SRC})
+target_link_libraries(bpsp libbpsp)
 

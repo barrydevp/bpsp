@@ -9,6 +9,8 @@
 #include "status.h"
 #include "util.h"
 
+extern uint8_t log__frame;
+
 bpsp__var_header* var_header__new(char* key, char* value) {
     ASSERT_ARG(key, NULL);
     /* ASSERT_ARG(strlen(key), NULL); */
@@ -175,14 +177,24 @@ status__err frame__empty(bpsp__frame* frame) {
     return s;
 }
 
+bpsp__var_header* frame__get_var_header(bpsp__frame* frame, char* key) {
+    if (!(frame && key)) {
+        return NULL;
+    }
+
+    bpsp__var_header* hdr = NULL;
+
+    HASH_FIND_STR(frame->var_headers, key, hdr);
+
+    return hdr;
+}
+
 status__err frame__set_var_header(bpsp__frame* frame, char* key, char* value) {
-    ASSERT_ARG(key, BPSP_INVALID_ARG);
-    ASSERT_ARG(strlen(key), BPSP_INVALID_ARG);
+    ASSERT_ARG(frame && key && strlen(key), BPSP_INVALID_ARG);
+    /* ASSERT_ARG(strlen(key), BPSP_INVALID_ARG); */
     /* ASSERT_ARG(value, NULL); */
 
     status__err s = BPSP_OK;
-
-    ASSERT_ARG(frame, BPSP_INVALID_ARG);
 
     bpsp__uint16 key_len = strlen(key);
     bpsp__uint16 value_len = strlen(value);
@@ -442,6 +454,14 @@ status__err frame__is_completed(bpsp__frame* frame) {
 status__err frame__build(bpsp__frame* frame) {
     status__err s = BPSP_OK;
 
+    char date_now[33];
+
+    date_now_utc(date_now, 33);
+
+    s = frame__set_var_header(frame, "x-time", date_now);
+
+    IFN_OK(s) { goto RET_ERROR; }
+
     s = frame__validate_opcode(frame->opcode);
     /* ASSERT_BPSP_OK(s); */
     IFN_OK(s) { goto RET_ERROR; }
@@ -460,17 +480,8 @@ RET_ERROR:
     return s;
 }
 
-status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build) {
-    ASSERT_ARG(dst, BPSP_INVALID_ARG);
-    ASSERT_ARG(src, BPSP_INVALID_ARG);
-    ASSERT_ARG(frame__is_completed(src) == BPSP_OK, BPSP_INVALID_ARG);
-
-    status__err s = frame__empty(dst);
-    ASSERT_BPSP_OK(s);
-
-    s = frame__set_frame_control(dst, src->opcode, src->flag);
-    ASSERT_BPSP_OK(s);
-
+status__err frame__copy_var_headers(bpsp__frame* dst, bpsp__frame* src) {
+    status__err s = BPSP_OK;
     // copy var_headers
     bpsp__var_header *var_header, *tmp;
     HASH_ITER(hh, src->var_headers, var_header, tmp) {
@@ -478,6 +489,29 @@ status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build) {
         s = frame__set_var_header(dst, var_header->key, var_header->value);
         ASSERT_BPSP_OK(s);
     }
+
+    return s;
+}
+
+status__err frame__copy_header(bpsp__frame* dst, bpsp__frame* src) {
+    status__err s = BPSP_OK;
+    s = frame__set_frame_control(dst, src->opcode, src->flag);
+    ASSERT_BPSP_OK(s);
+
+    s = frame__copy_var_headers(dst, src);
+    ASSERT_BPSP_OK(s);
+
+    return s;
+}
+
+status__err frame__copy(bpsp__frame* dst, bpsp__frame* src, uint8_t build) {
+    ASSERT_ARG(dst && src && frame__is_completed(src) == BPSP_OK, BPSP_INVALID_ARG);
+
+    status__err s = frame__empty(dst);
+    ASSERT_BPSP_OK(s);
+
+    s = frame__copy_header(dst, src);
+    ASSERT_BPSP_OK(s);
 
     // copy data
     s = frame__put_payload(dst, src->payload, src->payload_size, 0);
@@ -506,29 +540,31 @@ bpsp__frame* frame__dup(bpsp__frame* src, uint8_t build) {
 }
 
 void frame__print(bpsp__frame* frame) {
-    printf("[FRAME]\n");
+    if (log__frame) {
+        printf("[FRAME]\n");
 
-    if (frame) {
-        printf("(%u, %s, " BYTE_TO_BINARY_PATTERN ")\n", frame->vars_size, OP_TEXT(frame->opcode),
-               BYTE_TO_BINARY(frame->flag));
-        printf("%u\n", frame->data_size);
+        if (frame) {
+            printf("(%u, %s, " BYTE_TO_BINARY_PATTERN ")\n", frame->vars_size, OP_TEXT(frame->opcode),
+                   BYTE_TO_BINARY(frame->flag));
+            printf("%u\n", frame->data_size);
 
-        bpsp__var_header *var_header, *tmp;
-        HASH_ITER(hh, frame->var_headers, var_header, tmp) {
-            printf("\"%s\"\"%s\";\n", var_header->key, var_header->value);
+            bpsp__var_header *var_header, *tmp;
+            HASH_ITER(hh, frame->var_headers, var_header, tmp) {
+                printf("\"%s\"\"%s\";\n", var_header->key, var_header->value);
+            }
+
+            printf("######\n");
+            if (frame->data_size > 0) {
+                char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
+                mem__memcpy(payload, frame->payload, frame->data_size);
+                *(payload + frame->data_size) = '\0';
+                printf("%s\n", payload);
+                mem__free(payload);
+            }
+
+        } else {
+            printf("NULL\n");
         }
-
-        printf("######\n");
-        if (frame->data_size > 0) {
-            char* payload = (char*)mem__malloc(sizeof(bpsp__byte) * (frame->data_size + 1));
-            mem__memcpy(payload, frame->payload, frame->data_size);
-            *(payload + frame->data_size) = '\0';
-            printf("%s\n", payload);
-            mem__free(payload);
-        }
-
-    } else {
-        printf("NULL\n");
+        printf("\n");
     }
-    printf("\n");
 }

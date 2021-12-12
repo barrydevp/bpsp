@@ -7,10 +7,34 @@
 #include "bpsp.h"
 #include "broker.h"
 #include "client.h"
+#include "frame.h"
 #include "log.h"
 #include "status.h"
 #include "utarray.h"
 #include "uthash.h"
+
+status__err handle__reply(bpsp__client* client, bpsp__frame* in, status__err s, char* msg) {
+    if (flag__is_set(in->flag, FL_ACK)) {
+        IFN_OK(s) {
+            //
+            s = frame__ERR(client->out_frame, in, s, msg);
+        }
+        else {
+            //
+            s = frame__OK(client->out_frame, in, msg);
+        }
+
+        ASSERT_BPSP_OK(s);
+
+        s = client__send(client, client->out_frame, 1);
+
+    } else {
+        // reset ok
+        s = BPSP_OK;
+    }
+
+    return s;
+}
 
 status__err handle__ECHO(bpsp__client* client) {
     status__err s = BPSP_OK;
@@ -47,9 +71,9 @@ status__err handle__PUB(bpsp__client* client) {
 
     bpsp__frame* in = client->in_frame;
 
-    bpsp__var_header* topic_hdr = NULL;
+    char* msg = "PUB OK.";
 
-    HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
+    bpsp__var_header* topic_hdr = frame__get_var_header(in, "x-topic");
 
     if (topic_hdr) {
         UT_array* subs = broker__find_subs(client->broker, topic_hdr->value, 1);
@@ -63,15 +87,36 @@ status__err handle__PUB(bpsp__client* client) {
 
             IF_OK(s) {
                 for (; p != NULL; p = (bpsp__subscriber*)utarray_next(subs, p)) {
-                    printf("%s - %s", p->_id, p->client_id);
-                    s = broker__deliver_msg(client, p, deliver_frame);
+                    // avoid echo when echo is not set
+                    if (p->client == client && !flag__is_set(in->flag, FL_PUB_ECHO)) {
+                        continue;
+                    }
+
+                    // set sub_tag & origin topic
+                    s = frame__set_var_header(deliver_frame, "x-sub-tag", p->sub_tag);
+                    // TODO: Handle when cannot set_var_header
                     IFN_OK(s) {
                         //
-                        break;
+                        continue;
                     }
+                    s = frame__set_var_header(deliver_frame, "x-origin-topic", topic_hdr->value);
+                    // TODO: Handle when cannot set_var_header
+                    IFN_OK(s) {
+                        //
+                        continue;
+                    }
+                    printf("%s", p->_id);
+                    s = broker__deliver_msg(client, p, deliver_frame);
+                    // TODO: inspect error to determine if we can continue deliver msg or not.
+                    /* IFN_OK(s) { */
+                    /*     // */
+                    /*     break; */
+                    /* } */
                 }
 
                 frame__free(deliver_frame);
+                // reset status
+                s = BPSP_OK;
             }
         }
 
@@ -81,19 +126,17 @@ status__err handle__PUB(bpsp__client* client) {
 
         IFN_OK(s) {
             //
-            s = frame__ERR(client->out_frame, 0, s, "Deliver msg fail.");
-        }
-        else {
-            s = frame__OK(client->out_frame, 0, "PUB OK. Deliver to %d subscriber");
+            msg = "Deliver msg fail.";
         }
 
     } else {
-        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+        s = BPSP_INVALID_TOPIC;
+        msg = "Missing header `x-topic`.";
     }
 
     ASSERT_BPSP_OK(s);
 
-    s = client__send(client, client->out_frame, 1);
+    s = handle__reply(client, in, s, msg);
 
     IFN_OK(s) {
         perror("client__send()");
@@ -108,30 +151,41 @@ status__err handle__SUB(bpsp__client* client) {
 
     bpsp__frame* in = client->in_frame;
 
-    bpsp__var_header* topic_hdr = NULL;
+    /* frame__print(in); */
 
-    HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
+    bpsp__var_header* topic_hdr = frame__get_var_header(in, "x-topic");
+    bpsp__var_header* sub_tag_hdr = frame__get_var_header(in, "x-sub-tag");
 
-    if (topic_hdr) {
-        s = client__sub(client, topic_hdr->value, 1);
+    char* topic = topic_hdr ? topic_hdr->value : NULL;
+    char* sub_tag = sub_tag_hdr ? sub_tag_hdr->value : NULL;
+
+    char* msg = "SUB OK.";
+    if (!sub_tag) {
+        msg = "SUB OK. WARNING: You need specify sub_tag, default to `_0`.";
+    }
+
+    if (topic) {
+        status__err s = BPSP_OK;
+
+        bpsp__subscriber* sub = subscriber__new(topic, sub_tag, client, NULL);
+
+        if (!sub) {
+            s = BPSP_NO_MEMORY;
+        } else {
+            s = client__sub0(client, sub, 1);
+        }
 
         IFN_OK(s) {
             //
-            s = frame__ERR(client->out_frame, 0, s, "Cannot add subsciber into Tree.");
-        }
-        else {
-            s = frame__OK(client->out_frame, 0, "SUB OK.");
+            msg = "Cannot add subsciber into Tree.";
         }
 
     } else {
-        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+        s = BPSP_INVALID_TOPIC;
+        msg = "Missing header `x-topic`.";
     }
 
-    /* topic__print_tree(client->broker->topic_tree); */
-
-    ASSERT_BPSP_OK(s);
-
-    s = client__send(client, client->out_frame, 1);
+    s = handle__reply(client, in, s, msg);
 
     IFN_OK(s) {
         perror("client__send()");
@@ -146,30 +200,31 @@ status__err handle__UNSUB(bpsp__client* client) {
 
     bpsp__frame* in = client->in_frame;
 
-    bpsp__var_header* topic_hdr = NULL;
+    bpsp__var_header* topic_hdr = frame__get_var_header(in, "x-topic");
+    bpsp__var_header* sub_tag_hdr = frame__get_var_header(in, "x-sub-tag");
 
-    HASH_FIND_STR(in->var_headers, "x-topic", topic_hdr);
+    char* topic = topic_hdr ? topic_hdr->value : NULL;
+    char* sub_tag = sub_tag_hdr ? sub_tag_hdr->value : NULL;
 
-    if (topic_hdr) {
-        s = client__unsub(client, topic_hdr->value, 1);
+    char* msg = "UNSUB OK.";
+    if (!sub_tag) {
+        msg = "UNSUB OK. WARNING: You need specify sub_tag, default to `_0`.";
+    }
+
+    if (topic) {
+        s = client__unsub0(client, topic, sub_tag, 1);
 
         IFN_OK(s) {
             //
-            s = frame__ERR(client->out_frame, 0, s, "Cannot remove subsciber from Tree.");
-        }
-        else {
-            s = frame__OK(client->out_frame, 0, "UNSUB OK.");
+            msg = "Cannot remove subsciber from Tree.";
         }
 
     } else {
-        s = frame__ERR(client->out_frame, 0, BPSP_INVALID_TOPIC, "Missing header `x-topic`.");
+        s = BPSP_INVALID_TOPIC;
+        msg = "Missing header `x-topic`.";
     }
 
-    /* topic__print_tree(client->broker->topic_tree); */
-
-    ASSERT_BPSP_OK(s);
-
-    s = client__send(client, client->out_frame, 1);
+    s = handle__reply(client, in, s, msg);
 
     IFN_OK(s) {
         perror("client__send()");
@@ -214,7 +269,7 @@ status__err handle__client_loop(bpsp__client* client) {
         IFN_OK(s) {
             perror("client__read()");
             log__info("Client `%s` loop closing, (%s)", client->_id, ERR_TEXT(s));
-            return s;
+            break;
         }
 
         s = handle__in_frame(client);
@@ -222,7 +277,7 @@ status__err handle__client_loop(bpsp__client* client) {
         IFN_OK(s) {
             perror("hanle()");
             log__info("Client `%s` loop closing, (%s)", client->_id, ERR_TEXT(s));
-            return s;
+            break;
         }
     }
 
