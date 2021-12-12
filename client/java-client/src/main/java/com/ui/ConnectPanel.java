@@ -23,6 +23,7 @@ public class ConnectPanel extends JPanel {
                 BorderFactory.createEmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE),
                 BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.PINK), "Connector")
         ));
+//        this.setBackground(Color.WHITE);
 
         this.add(inputForm);
         this.add(connectBtn);
