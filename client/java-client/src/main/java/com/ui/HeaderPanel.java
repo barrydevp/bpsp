@@ -24,6 +24,7 @@ public class HeaderPanel extends JPanel {
                 BorderFactory.createEmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE),
                 BorderFactory.createLineBorder(Color.PINK)
         ));
+//        this.setBackground(Color.WHITE);
         this.add(titleLabel, JPanel.CENTER_ALIGNMENT);
     }
 }
