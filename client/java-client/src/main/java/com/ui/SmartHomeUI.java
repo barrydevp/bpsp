@@ -76,6 +76,7 @@ public class SmartHomeUI extends AbstractUI {
         JList<Room> listRoom = new JList<>(listModel);
         NewDeviceFrame newDeviceFrame = new NewDeviceFrame();
         JButton newDeviceBtn = new JButton("New device");
+        JButton delRoomBtn = new JButton("Remove room");
         JPanel roomContainer;
 
         // Data
@@ -98,16 +99,24 @@ public class SmartHomeUI extends AbstractUI {
                 this.roomManager.selectRoom(listRoom.getSelectedValue());
             });
 
+            c.insets = new Insets(3, 3, 3, 3);
+
+            JPanel controlPanel = new JPanel(new GridLayout(0, 2));
+            controlPanel.setPreferredSize(new Dimension(LEFT_NAV_WIDTH, 50));
+            controlPanel.setSize(controlPanel.getPreferredSize());
             newDeviceBtn.addActionListener(event -> {
                 newDeviceFrame.open();
             });
-
-            c.insets = new Insets(3, 3, 3, 3);
-
-            JPanel controlPanel = new JPanel();
-            controlPanel.setPreferredSize(new Dimension(LEFT_NAV_WIDTH, 50));
+            delRoomBtn.addActionListener(event -> {
+                Room curRoom = this.listRoom.getSelectedValue();
+                if (curRoom != null) {
+                    this.removeRoomFromRenderList(curRoom);
+                    this.roomManager.removeRoom(curRoom);
+                }
+            });
             controlPanel.add(newDeviceBtn);
-            this.addToGrid(controlPanel, 0, 0, 0.3, 0.1, 1, 1, GridBagConstraints.BOTH);
+            controlPanel.add(delRoomBtn);
+            this.addToGrid(controlPanel, 0, 0, 0.1, 0.1, 1, 1, GridBagConstraints.BOTH);
 
             listRoom.setOpaque(false);
             JScrollPane listScroll = new JScrollPane(listRoom);
@@ -116,7 +125,7 @@ public class SmartHomeUI extends AbstractUI {
             listScroll.setBorder(BorderFactory.createEmptyBorder());
             listScroll.setPreferredSize(new Dimension(LEFT_NAV_WIDTH, 300));
             listScroll.setSize(listScroll.getPreferredSize());
-            this.addToGrid(listScroll, 0, 1, 0.3, 1, 1, 1, GridBagConstraints.BOTH);
+            this.addToGrid(listScroll, 0, 1, 0.1, 1, 1, 1, GridBagConstraints.BOTH);
 
             Image roomContainerBackground = (new ImageIcon(
                     SystemUtils.getImagePath("room-container.png"))
@@ -134,7 +143,7 @@ public class SmartHomeUI extends AbstractUI {
 //            roomContainer.setBorder(BorderFactory.createLineBorder(Color.ORANGE, 2, true));
             roomContainer.setVisible(true);
 
-            this.addToGrid(roomContainer, 1, 0, 0.7, 1, 1, 2, GridBagConstraints.BOTH);
+            this.addToGrid(roomContainer, 1, 0, 0.9, 1, 1, 2, GridBagConstraints.BOTH);
 
             this.setVisible(false);
         }
