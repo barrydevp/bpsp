@@ -185,6 +185,7 @@ public abstract class DevicePanel extends JPanel {
         });
         removeBtn.setPreferredSize(new Dimension(30, 30));
         removeBtn.setBorder(BorderFactory.createEmptyBorder());
+        removeBtn.setOpaque(false);
         this.addToGrid(removeBtn, 1, 0, 0.1, 0.1, 1, 1, GridBagConstraints.PAGE_END);
 
         activeBtn.addActionListener((event) -> {
@@ -211,6 +212,7 @@ public abstract class DevicePanel extends JPanel {
         }
         activeBtn.setPreferredSize(new Dimension(40, 20));
         activeBtn.setBorder(BorderFactory.createEmptyBorder());
+        activeBtn.setOpaque(false);
         this.addToGrid(activeBtn, 1, 1, 0.3, 1, 1, 1, GridBagConstraints.PAGE_END);
 
         nameLabel.setText(device.getName());
