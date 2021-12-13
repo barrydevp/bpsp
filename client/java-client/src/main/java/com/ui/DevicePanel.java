@@ -20,7 +20,7 @@ public abstract class DevicePanel extends JPanel {
         FANS("Fans"),
         TV("TV"),
         COMPUTER("Computer"),
-        UNKNOWN("Unknown");
+        CUSTOM("Custom");
 
         static String[] listStr = new String[]{LIGHT.typeStr, THERMOSTAT.typeStr, TV.typeStr, COMPUTER.typeStr, FRIDGE.typeStr, SPEAKER.typeStr, FANS.typeStr};
 
@@ -65,7 +65,7 @@ public abstract class DevicePanel extends JPanel {
             } else if (type.equals(COMPUTER.getTypeStr())) {
                 return COMPUTER;
             } else {
-                return UNKNOWN;
+                return CUSTOM;
             }
         }
 
@@ -88,7 +88,7 @@ public abstract class DevicePanel extends JPanel {
                     icon = new ImageIcon(SystemUtils.getImagePath("fans-type.png"));
                     break;
                 default:
-                    icon = new ImageIcon(SystemUtils.getImagePath("unknown-type.png"));
+                    icon = new ImageIcon(SystemUtils.getImagePath("custom-type.png"));
             }
 
             return icon;

@@ -23,6 +23,14 @@ public class Publisher extends Handler {
         this(client, topic, "");
     }
 
+    public String getTopic() {
+        return topic;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
     public boolean isOfFrame(Frame frame) {
         VarHeader topicHdr = frame.getVarHeader("x-topic");
         if (topicHdr == null) {
