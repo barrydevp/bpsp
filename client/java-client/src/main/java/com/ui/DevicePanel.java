@@ -126,7 +126,7 @@ public abstract class DevicePanel extends JPanel {
             case FANS:
                 return new FansDevice(device);
             default:
-                return new UnknownDevice(device);
+                return new CustomDevice(device);
         }
     }
 
@@ -358,9 +358,9 @@ class FansDevice extends DevicePanel {
     }
 }
 
-class UnknownDevice extends DevicePanel {
+class CustomDevice extends DevicePanel {
 
-    UnknownDevice(SmartHomeUI.Device device) {
+    CustomDevice(SmartHomeUI.Device device) {
         super(device);
     }
 
