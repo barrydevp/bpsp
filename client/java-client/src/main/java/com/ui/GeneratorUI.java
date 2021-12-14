@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.time.Instant;
 import java.util.Vector;
 
 public class GeneratorUI extends AbstractUI {
@@ -59,7 +60,7 @@ public class GeneratorUI extends AbstractUI {
         final String[] columnNames = {
                 "Topic",
                 "Type",
-                "Interval",
+                "Last Sent",
                 "Active",
         };
 
@@ -130,13 +131,14 @@ public class GeneratorUI extends AbstractUI {
                     return;
                 }
 
+                GeneratorPublisher publisher = new GeneratorPublisher(topicField.getText(),
+                        Generator.getGenerator((DevicePanel.DeviceType) typeField.getSelectedItem()));
 
                 this.generatorModel.addRow(new Object[]{
                         topicField.getText(),
                         typeField.getSelectedItem(),
-                        "5000",
-                        new GeneratorPublisher(topicField.getText(),
-                                Generator.getGenerator((DevicePanel.DeviceType) typeField.getSelectedItem()))
+                        publisher.lastSent,
+                        publisher
                 });
 //                new GeneratorPublisher(topicField.getText(),
 //                        Generator.getGenerator((DevicePanel.DeviceType) typeField.getSelectedItem()))
@@ -238,6 +240,7 @@ public class GeneratorUI extends AbstractUI {
     class GeneratorPublisher extends Publisher {
 
         Generator gen;
+        Instant lastSent;
 
         public GeneratorPublisher(String topic, Generator gen) {
             super(GeneratorUI.this.getBPSPClient(), topic, "");
@@ -260,6 +263,7 @@ public class GeneratorUI extends AbstractUI {
             super.setMsg(gen.getData());
             try {
                 this.client.pub(this);
+                this.lastSent = Instant.now();
             } catch (Exception e) {
                 LOGGER.error(e);
             }
