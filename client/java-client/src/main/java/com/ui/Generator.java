@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
+import java.text.DecimalFormat;
 
 public abstract class Generator {
     private static final Logger LOGGER = LogManager.getLogger(Generator.class);
@@ -42,10 +43,11 @@ class LightGenerator extends Generator {
 }
 
 class ThermostatGenerator extends Generator {
+    static final DecimalFormat format = new DecimalFormat("0.0");
 
     @Override
     public String getData() {
-        return (Generator.rand.nextInt(20) + 10 + Generator.rand.nextDouble()) + "";
+        return (Generator.rand.nextInt(20) + 10 + format.format(Generator.rand.nextDouble())) + "";
     }
 }
 

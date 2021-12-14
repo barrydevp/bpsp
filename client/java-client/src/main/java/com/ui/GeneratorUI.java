@@ -2,11 +2,14 @@ package com.ui;
 
 import com.core.client.BPSPClient;
 import com.core.client.Publisher;
+import com.core.frame.Frame;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.Vector;
 
 public class GeneratorUI extends AbstractUI {
     private static final Logger LOGGER = LogManager.getLogger(GeneratorUI.class);
@@ -52,18 +55,31 @@ public class GeneratorUI extends AbstractUI {
 
     class GeneratorList extends JPanel {
         static final int MAX_HEIGHT = 380;
+        static final int MAX_LOGS = 100;
+        final String[] columnNames = {
+                "Topic",
+                "Type",
+                "Interval",
+                "Active",
+        };
 
         // UI
         GridBagConstraints c = new GridBagConstraints();
-        DefaultListModel<GeneratorPublisher> generatorModel = new DefaultListModel<>();
-        JList<GeneratorPublisher> generators = new JList<>(generatorModel);
+        JTabbedPane tabbedPane = new JTabbedPane();
+        JPanel listContainer = new JPanel();
+        DefaultTableModel generatorModel = new DefaultTableModel(columnNames, 0);
+        JTable generators = new JTable(generatorModel) {
+            private static final long serialVersionUID = 1L;
+
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         JScrollPane listPanel = new JScrollPane(generators);
         JLabel topicLb = new JLabel("Topic");
         JTextField topicField = new JTextField();
         JLabel typeLb = new JLabel("Type");
         JComboBox<DevicePanel.DeviceType> typeField = new JComboBox<>(DevicePanel.DeviceType.values());
-        //        JLabel msgLb = new JLabel("Message");
-//        JTextField msgField = new JTextField();
         JButton addBtn = new JButton("Add");
         JButton delBtn = new JButton("Delete");
         JButton clearLogBtn = new JButton("Clear log");
@@ -76,10 +92,14 @@ public class GeneratorUI extends AbstractUI {
         Thread loop;
 
         public GeneratorList() {
-            this.setPreferredSize(new Dimension(AbstractUI.MAX_WIDTH, MAX_HEIGHT));
-            this.setSize(this.getPreferredSize());
-            this.setLayout(new GridBagLayout());
-            this.setBorder(BorderFactory.createTitledBorder(
+            super(new GridLayout(1, 1));
+//            this.setPreferredSize(new Dimension(AbstractUI.MAX_WIDTH, MAX_HEIGHT));
+//            this.setSize(this.getPreferredSize());
+
+            listContainer.setPreferredSize(new Dimension(AbstractUI.MAX_WIDTH, MAX_HEIGHT));
+            listContainer.setSize(this.getPreferredSize());
+            listContainer.setLayout(new GridBagLayout());
+            listContainer.setBorder(BorderFactory.createTitledBorder(
                     BorderFactory.createLineBorder(Color.PINK, 1, true), "Generator List")
             );
 
@@ -88,20 +108,20 @@ public class GeneratorUI extends AbstractUI {
             c.weightx = 1;
             c.weighty = 0.05;
             c.fill = GridBagConstraints.HORIZONTAL;
-            this.add(topicLb, c);
+            listContainer.add(topicLb, c);
 
             c.gridx = 1;
             c.gridy = 0;
             topicField.setColumns(10);
-            this.add(topicField, c);
+            listContainer.add(topicField, c);
 
             c.gridx = 0;
             c.gridy = 1;
-            this.add(typeLb, c);
+            listContainer.add(typeLb, c);
 
             c.gridx = 1;
             c.gridy = 1;
-            this.add(typeField, c);
+            listContainer.add(typeField, c);
 
             c.gridx = 0;
             c.gridy = 2;
@@ -110,24 +130,30 @@ public class GeneratorUI extends AbstractUI {
                     return;
                 }
 
-                this.generatorModel.addElement(
+
+                this.generatorModel.addRow(new Object[]{
+                        topicField.getText(),
+                        typeField.getSelectedItem(),
+                        "5000",
                         new GeneratorPublisher(topicField.getText(),
                                 Generator.getGenerator((DevicePanel.DeviceType) typeField.getSelectedItem()))
-                );
+                });
+//                new GeneratorPublisher(topicField.getText(),
+//                        Generator.getGenerator((DevicePanel.DeviceType) typeField.getSelectedItem()))
 
             });
-            this.add(addBtn, c);
+            listContainer.add(addBtn, c);
 
             c.gridx = 1;
             c.gridy = 2;
             delBtn.addActionListener((event) -> {
-                if (typeField.getSelectedItem() == null) {
+                if (generators.getSelectedRow() == -1) {
                     return;
                 }
 
-                this.generatorModel.removeElementAt(typeField.getSelectedIndex());
+                this.generatorModel.removeRow(generators.getSelectedRow());
             });
-            this.add(delBtn, c);
+            listContainer.add(delBtn, c);
 
 //            c.gridx = 0;
 //            c.gridy = 3;
@@ -143,8 +169,32 @@ public class GeneratorUI extends AbstractUI {
             c.fill = GridBagConstraints.BOTH;
 
 //            listPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.PINK), "LIST"));
-            this.add(listPanel, c);
+            listContainer.add(listPanel, c);
 
+            tabbedPane.addTab("List", null, listContainer, "List topic generator");
+            tabbedPane.setForeground(Color.RED);
+            logPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.PINK), "Logs"));
+            logs.setOpaque(false);
+            logPanel.setOpaque(false);
+            logPanel.getViewport().setOpaque(false);
+            tabbedPane.addTab("Logs", null, logPanel, "Logging");
+
+            //Add the tabbed pane to this panel.
+            this.add(tabbedPane, FlowLayout.LEFT);
+
+            //The following line enables to use scrolling tabs.
+            tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        }
+
+        void addLog(String item) {
+            logModel.addElement(item);
+            if (logModel.size() > MAX_LOGS) {
+                logModel.removeElementAt(0);
+            }
+            int lastIndex = logs.getModel().getSize() - 1;
+            if (lastIndex >= 0) {
+                logs.ensureIndexIsVisible(lastIndex);
+            }
         }
 
         public void startLoop() {
@@ -154,10 +204,12 @@ public class GeneratorUI extends AbstractUI {
 
             this.running = true;
             loop = new Thread(() -> {
+                LOGGER.info("Start publisher loop");
                 try {
                     while (running) {
-                        for (Object obj : GeneratorList.this.generatorModel.toArray()) {
-                            GeneratorPublisher publisher = (GeneratorPublisher) obj;
+                        for (Vector vec : GeneratorList.this.generatorModel.getDataVector()) {
+                            GeneratorPublisher publisher = (GeneratorPublisher) vec.get(3);
+//                            GeneratorPublisher publisher = (GeneratorPublisher) obj;
                             publisher.pub();
                         }
                         Thread.sleep(2000);
@@ -190,6 +242,18 @@ public class GeneratorUI extends AbstractUI {
         public GeneratorPublisher(String topic, Generator gen) {
             super(GeneratorUI.this.getBPSPClient(), topic, "");
             this.gen = gen;
+        }
+
+        @Override
+        public void replyOk(com.core.frame.Frame reply) {
+            super.replyOk(reply);
+            GeneratorUI.this.generatorList.addLog("OK \"" + this.getMsg() + "\" to \"" + this.getTopic() + "\": " + reply.getStrData());
+        }
+
+        @Override
+        public void replyError(Frame reply) {
+            super.replyError(reply);
+            GeneratorUI.this.generatorList.addLog("ERR \"" + this.getMsg() + "\" to \"" + this.getTopic() + "\": " + reply.getStrData());
         }
 
         public void pub() {
