@@ -160,10 +160,10 @@ public abstract class DevicePanel extends JPanel {
         this.setLayout(new GridBagLayout());
         this.setPreferredSize(new Dimension(
                 (SmartHomeUI.MonitorPanel.ROOM_CONTAINER_WIDTH - 20) / 2,
-                (SmartHomeUI.MonitorPanel.ROOM_CONTAINER_HEIGHT - 20) / 2
+                (SmartHomeUI.MonitorPanel.ROOM_CONTAINER_HEIGHT - 20) / 3
         ));
         this.setSize(this.getPreferredSize());
-        this.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        this.setBorder(BorderFactory.createEmptyBorder(8, 15, 10, 15));
 //        this.setBorder(BorderFactory.createCompoundBorder(
 //                BorderFactory.createEmptyBorder(2, 2, 2, 2),
 //                BorderFactory.createCompoundBorder(
@@ -216,11 +216,11 @@ public abstract class DevicePanel extends JPanel {
         this.addToGrid(activeBtn, 1, 1, 0.3, 1, 1, 1, GridBagConstraints.PAGE_END);
 
         nameLabel.setText(device.getName());
-        nameLabel.setFont(new Font("Helvetica", Font.BOLD, 18));
+        nameLabel.setFont(new Font("Helvetica", Font.BOLD, 16));
         this.addToGrid(nameLabel, 0, 1, 0.7, 1, 1, 1, GridBagConstraints.BOTH);
 
         dataLabel.setText("No data");
-        dataLabel.setFont(new Font("Helvetica", Font.PLAIN, 16));
+        dataLabel.setFont(new Font("Helvetica", Font.PLAIN, 14));
         dataLabel.setForeground(Color.GRAY);
         this.addToGrid(dataLabel, 0, 2, 1, 1, 1, 1, GridBagConstraints.BOTH);
 
