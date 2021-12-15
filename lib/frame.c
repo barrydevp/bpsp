@@ -9,8 +9,6 @@
 #include "status.h"
 #include "util.h"
 
-extern uint8_t log__frame;
-
 bpsp__var_header* var_header__new(char* key, char* value) {
     ASSERT_ARG(key, NULL);
     /* ASSERT_ARG(strlen(key), NULL); */
