@@ -55,13 +55,13 @@ public class GeneratorUI extends AbstractUI {
     }
 
     class GeneratorList extends JPanel {
-        static final int MAX_HEIGHT = 380;
+        static final int MAX_HEIGHT = 330;
         static final int MAX_LOGS = 100;
         final String[] columnNames = {
                 "Topic",
                 "Type",
                 "Last Sent",
-                "Active",
+                "Publisher",
         };
 
         // UI
@@ -83,13 +83,19 @@ public class GeneratorUI extends AbstractUI {
         JComboBox<DevicePanel.DeviceType> typeField = new JComboBox<>(DevicePanel.DeviceType.values());
         JButton addBtn = new JButton("Add");
         JButton delBtn = new JButton("Delete");
+        JLabel intervalLb = new JLabel("Interval(ms)");
+        JTextField intervalField = new JTextField();
+        JButton updateIntervalBtn = new JButton("Update Interval");
+        JButton startBtn = new JButton("Start Run");
+        JButton stopBtn = new JButton("Stop Run");
         JButton clearLogBtn = new JButton("Clear log");
         DefaultListModel<String> logModel = new DefaultListModel<>();
         JList<String> logs = new JList<>(logModel);
-        JScrollPane logPanel = new JScrollPane(logs);
+        JPanel logContainer = new JPanel(new GridBagLayout());
 
         // data
         boolean running = false;
+        int interval = 5000;
         Thread loop;
 
         public GeneratorList() {
@@ -106,26 +112,32 @@ public class GeneratorUI extends AbstractUI {
 
             c.gridx = 0;
             c.gridy = 0;
-            c.weightx = 1;
+            c.weightx = 0.025;
             c.weighty = 0.05;
             c.fill = GridBagConstraints.HORIZONTAL;
+            topicLb.setHorizontalAlignment(JLabel.CENTER);
             listContainer.add(topicLb, c);
 
             c.gridx = 1;
             c.gridy = 0;
+            c.weightx = 0.15;
             topicField.setColumns(10);
             listContainer.add(topicField, c);
 
-            c.gridx = 0;
-            c.gridy = 1;
+            c.gridx = 2;
+            c.gridy = 0;
+            c.weightx = 0.01;
+            typeLb.setHorizontalAlignment(JLabel.CENTER);
             listContainer.add(typeLb, c);
 
-            c.gridx = 1;
-            c.gridy = 1;
+            c.gridx = 3;
+            c.gridy = 0;
+            c.weightx = 0.1;
             listContainer.add(typeField, c);
 
-            c.gridx = 0;
-            c.gridy = 2;
+            c.gridx = 4;
+            c.gridy = 0;
+            c.weightx = 0.01;
             addBtn.addActionListener((event) -> {
                 if (topicField.getText().isEmpty() || typeField.getSelectedItem() == null) {
                     return;
@@ -146,8 +158,8 @@ public class GeneratorUI extends AbstractUI {
             });
             listContainer.add(addBtn, c);
 
-            c.gridx = 1;
-            c.gridy = 2;
+            c.gridx = 5;
+            c.gridy = 0;
             delBtn.addActionListener((event) -> {
                 if (generators.getSelectedRow() == -1) {
                     return;
@@ -157,17 +169,62 @@ public class GeneratorUI extends AbstractUI {
             });
             listContainer.add(delBtn, c);
 
-//            c.gridx = 0;
-//            c.gridy = 3;
-//            clearLogBtn.addActionListener((event) -> {
-//                this.logModel.clear();
-//            });
-//            this.add(clearLogBtn, c);
-//
             c.gridx = 0;
-            c.gridy = 3;
+            c.gridy = 1;
+            c.weightx = 0.025;
+            intervalLb.setHorizontalAlignment(JLabel.CENTER);
+            listContainer.add(intervalLb, c);
+
+            c.gridx = 1;
+            c.gridy = 1;
+            c.weightx = 0.15;
+            intervalField.setText(this.interval + "");
+            intervalField.setColumns(10);
+            listContainer.add(intervalField, c);
+
+            c.gridx = 2;
+            c.gridy = 1;
+            c.weightx = 0.01;
+            updateIntervalBtn.addActionListener((event) -> {
+                try {
+                    int newInterval = Integer.parseInt(this.intervalField.getText());
+                    if (newInterval <= 200) {
+                        throw new IllegalArgumentException("Interval must greater than 200ms");
+                    }
+                    this.interval = newInterval;
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(
+                            GeneratorUI.this,
+                            e.getMessage(),
+                            "Update Interval Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            });
+            listContainer.add(updateIntervalBtn, c);
+
+            c.gridx = 3;
+            c.gridy = 1;
+            startBtn.addActionListener((event) -> {
+                if (!this.running) {
+                    this.startLoop();
+                }
+            });
+            listContainer.add(startBtn, c);
+
+            c.gridx = 4;
+            c.gridy = 1;
+            stopBtn.addActionListener((event) -> {
+                if (this.running) {
+                    this.stopLoop();
+                }
+            });
+            listContainer.add(stopBtn, c);
+
+            c.gridx = 0;
+            c.gridy = 2;
             c.weighty = 1;
-            c.gridwidth = 2;
+            c.gridwidth = 8;
             c.fill = GridBagConstraints.BOTH;
 
 //            listPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.PINK), "LIST"));
@@ -175,11 +232,33 @@ public class GeneratorUI extends AbstractUI {
 
             tabbedPane.addTab("List", null, listContainer, "List topic generator");
             tabbedPane.setForeground(Color.RED);
-            logPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.PINK), "Logs"));
+
+            logContainer.setPreferredSize(new Dimension(AbstractUI.MAX_WIDTH, MAX_HEIGHT));
+            logContainer.setSize(this.getPreferredSize());
+            GridBagConstraints c1 = new GridBagConstraints();
+            c1.gridx = 0;
+            c1.gridy = 0;
+            c1.weightx = 1;
+            c1.weighty = 0.05;
+//            c1.fill = GridBagConstraints.HORIZONTAL;
+            clearLogBtn.addActionListener((event) -> {
+                this.logModel.clear();
+            });
+            logContainer.add(clearLogBtn, c1);
+
+            JScrollPane logScrollPanel = new JScrollPane(logs);
+            logScrollPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.PINK), "Logs"));
             logs.setOpaque(false);
-            logPanel.setOpaque(false);
-            logPanel.getViewport().setOpaque(false);
-            tabbedPane.addTab("Logs", null, logPanel, "Logging");
+            logScrollPanel.setOpaque(false);
+            logScrollPanel.getViewport().setOpaque(false);
+            c1.gridx = 0;
+            c1.gridy = 1;
+            c1.weighty = 0.5;
+            c1.gridwidth = 1;
+            c1.fill = GridBagConstraints.BOTH;
+            logContainer.add(logScrollPanel, c1);
+
+            tabbedPane.addTab("Logs", null, logContainer, "Logging");
 
             //Add the tabbed pane to this panel.
             this.add(tabbedPane, FlowLayout.LEFT);
@@ -213,8 +292,11 @@ public class GeneratorUI extends AbstractUI {
                             GeneratorPublisher publisher = (GeneratorPublisher) vec.get(3);
 //                            GeneratorPublisher publisher = (GeneratorPublisher) obj;
                             publisher.pub();
+                            vec.setElementAt(publisher.lastSent, 2);
+//                            this.generatorModel.setValueAt(publisher.lastSent, );
                         }
-                        Thread.sleep(2000);
+                        GeneratorList.this.generatorModel.fireTableDataChanged();
+                        Thread.sleep(this.interval);
                     }
                 } catch (InterruptedException ex) {
                     LOGGER.error(ex);
