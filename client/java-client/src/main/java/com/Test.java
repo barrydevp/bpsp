@@ -26,7 +26,7 @@ public class Test {
 
         SystemUtils.clearConsole();
 
-        LOGGER.info("Client began to start");
+        LOGGER.info("Client began to start!!");
 
         BPSPClient client = null;
         SubscriberClient subClient = null;
