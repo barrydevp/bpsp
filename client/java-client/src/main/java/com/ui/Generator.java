@@ -47,15 +47,16 @@ class ThermostatGenerator extends Generator {
 
     @Override
     public String getData() {
-        return (Generator.rand.nextInt(20) + 10 + format.format(Generator.rand.nextDouble())) + "";
+        return format.format(Generator.rand.nextInt(20) + 10 + Generator.rand.nextDouble()) + "";
     }
 }
 
 class FridgeGenerator extends Generator {
+    static final DecimalFormat format = new DecimalFormat("0.0");
 
     @Override
     public String getData() {
-        return (Generator.rand.nextInt(6) + 8) + "";
+        return format.format(Generator.rand.nextInt(6) + 8 + Generator.rand.nextDouble()) + "";
     }
 }
 

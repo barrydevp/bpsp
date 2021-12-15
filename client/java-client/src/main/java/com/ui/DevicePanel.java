@@ -267,7 +267,11 @@ class LightDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = device.getData().getStrData() + "Kw";
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
@@ -281,7 +285,11 @@ class ThermostatDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = device.getData().getStrData() + "°C";
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
@@ -295,7 +303,11 @@ class FridgeDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = device.getData().getStrData() + "°C";
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
@@ -309,7 +321,11 @@ class SpeakerDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = device.getData().getStrData() + "%";
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
@@ -323,7 +339,11 @@ class TVDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = device.getData().getStrData();
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
@@ -337,7 +357,11 @@ class ComputerDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = device.getData().getStrData();
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
@@ -351,7 +375,11 @@ class FansDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = "Level " + device.getData().getStrData();
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
@@ -365,7 +393,11 @@ class CustomDevice extends DevicePanel {
     }
 
     public void reRender() {
-        dataLabel.setText(device.getData() != null ? device.getData().getStrData() : "No data");
+        String data = "No data";
+        if (device.getData() != null) {
+            data = device.getData().getStrData();
+        }
+        dataLabel.setText(data);
 
         this.repaint();
         this.revalidate();
