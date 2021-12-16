@@ -19,6 +19,7 @@ add_subdirectory(test)
 # SOURCE
 file(GLOB SERVER_SRC ${PROJECT_SOURCE_DIR}/server/*.c)
 file(GLOB TOOLS_SRC ${PROJECT_SOURCE_DIR}/tools/*.c)
+file(GLOB TOOLS_SRC ${PROJECT_SOURCE_DIR}/client/c-client/*.c)
 
 # LINK
 # link_directories(lib)
@@ -33,3 +34,5 @@ target_link_libraries(bpsp_server libbpsp)
 add_executable(bpsp ${TOOLS_SRC})
 target_link_libraries(bpsp libbpsp)
 
+add_executable(client ${TOOLS_SRC})
+target_link_libraries(client libbpsp)
