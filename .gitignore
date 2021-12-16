@@ -55,3 +55,5 @@ build
 build_test
 
 .DS_Store
+
+.vscode/
