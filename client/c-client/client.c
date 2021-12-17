@@ -60,7 +60,7 @@ static void typeSupport() {
       "Type support by client:                                \n"
       " -t power          range: 8 - 14 Kw              time = 5s\n"
       " -t temperature    range: 0*C - 100*C            time = 8s\n"
-      " -t percent        range: 0% - 100%              time = 8s\n"
+      " -t percent        range: 0%% - 100%%              time = 8s\n"
       " -t level          range: 1 - 5                  time = 20s\n"
       " -t status         range: ON - OFF               time = 30s\n"
       "                                                       \n");
