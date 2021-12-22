@@ -43,7 +43,7 @@ int pexit(const char *str)
     exit(1);
 }
 
-int typeData()
+int type_data()
 {
     if (strcmp(cfg.type, "power") == 0)
         return 0;
@@ -58,7 +58,7 @@ int typeData()
 }
 
 
-static void typeSupport()
+static void type_support()
 {
     printf(
         "Type support by client:                                \n"
@@ -73,7 +73,7 @@ static void typeSupport()
 int get_input(char *buf, int buf_size)
 {
     char data[buf_size];
-    int type = typeData();
+    int type = type_data();
     while (1)
     {
         switch (type)
@@ -435,7 +435,7 @@ static int parse_args(struct config *cfg, struct command *cmd, int argc, char **
             printf("Type : %s\n", cfg->type);
             break;
         case 's':
-            typeSupport();
+            type_support();
              return 1;
         case 'l':
             log__enable = 1;
