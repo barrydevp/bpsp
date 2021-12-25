@@ -17,7 +17,7 @@ Then use [bpsp cli tool](https://github.com/barrydevp/bpsp/tree/master/tools/REA
 
 
 ```
-$ client -s
+$ bpsp_c_client -e
 Type support by client:                                
  -t power          range: 200w - 500w          time = 5s
  -t temperature    range: 0*C - 100*C          time = 8s
@@ -26,7 +26,7 @@ Type support by client:
  -t status         range: active - deactive    time = 30s
      
 eg: 
-$ client -t power pub locationA/sensorA
+$ bpsp_c_client -t power pub locationA/sensorA
 
 Type : power
 Broker 1.0.0BPSP - Basic Publish Subscribe Broker
