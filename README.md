@@ -1,15 +1,27 @@
 Basic Publish Subscribe Protocol (BPSP)
 =================
-Họ và tên	      Công việc
 
-Đào Minh Hải	  Thiết kế giao thức + Broker + Base Subscriber UI java
-
-Hà Văn Hoài	    Core Client Java(xử lý gửi nhận Frame) + Subscriber
-
-Đào Đình Công	  Auto gen data publisher C client + Publisher java
-
-Phạm Xuân Hanh	Publisher UI java + docs
-
+<table>
+<thead><tr><th>Họ và tên</th><th>Công việc</th></tr></thead>
+<tbody>
+<tr>
+  <td>Đào Minh Hải</td>
+  <td>Thiết kế giao thức + Broker + Base Subscriber UI java</td>
+</tr>
+<tr>
+  <td>Hà Văn Hoài</td>
+  <td>Core Client Java(xử lý gửi nhận Frame) + Subscriber</td>
+</tr>
+<tr>
+  <td>Đào Đình Công</td>
+  <td>Auto gen data publisher C client + Publisher java</td>
+</tr>
+<tr>
+  <td>Phạm Xuân Hanh</td>
+  <td>Publisher UI java + docs</td>
+</tr>
+</tbody>
+</table>
 
 BPSP is light weight publish subscribe protocol. The project contain the [specification](https://github.com/barrydevp/bpsp/tree/master/specs/specification.md)
 and the source code implementation of a client-server for version 1.0.
